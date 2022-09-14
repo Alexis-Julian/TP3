@@ -109,7 +109,7 @@ def mostrar(vr,archf,archl):
             vr=pickle.load(archl)
             print(vr.cod,vr.nombre)
 
-def producto(car):
+def producto(car,nombre):
     opcion=input("").upper()
     clear("cls")
     match opcion:
@@ -117,24 +117,30 @@ def producto(car):
             print("---------Alta---------")
             t=os.path.getsize(afp)
             alp.seek(t)
-            codigo=input("[0-Salir] Codigo de producto: ")
+            print("[0-Salir] Codigo de ",nombre,": ")
+            codigo=input("")
             while validar_tipo(int,codigo,0,1000):
                 print("Numero entre [1-1000]")
-                codigo=input("[0-Salir] Codigo de producto: ")
+                print("[0-Salir] Codigo de ",nombre,": ")
+                codigo=input("")
             codigo=int(codigo)
             while codigo != 0:
                 car.cod=codigo 
-                car.nombre=input("Nombre de producto: ")
+                print("Nombre de ",nombre,": ")
+                car.nombre=input("")
                 while len(car.nombre) <0 or len(car.nombre) >20:
-                    print("El producto debe tener como maximo 20 caracteres")
-                    car.nombre=input("Nombre de producto: ")
+                    print("El ",nombre,"debe tener como maximo 20 caracteres")
+                    print("Nombre de ",nombre,": " )
+                    car.nombre=input("")
                 formatear(car,0)
                 pickle.dump(car,alp)
                 alp.flush()
-                codigo=input("[0-Salir] Codigo de producto: ")
+                print("[0-Salir] Codigo de",nombre,": ")
+                codigo=input("")
                 while validar_tipo(int,codigo,0,1000):
                     print("Numero entre [1-1000]")
-                    codigo=input("[0-Salir] Codigo de producto: ")
+                    print("[0-Salir] Codigo de ",nombre,": ")
+                    codigo=input("")
                 codigo=int(codigo)
             mostrar(car,afp,alp)
             os.system("pause")
@@ -195,11 +201,14 @@ def administraciones():
             case "B":
                 clear("cls")
                 submenu_administacion_visible()
-                car=Productos()
-                producto(car)
+                pro=Productos()
+                producto(pro,"producto")
             case "C":
+                clear("cls")
                 submenu_administacion_visible()
-
+                rub=Productos()           
+                producto(rub,"rubro")
+ 
             case "D":
                 submenu_administacion_visible()
             case "E":

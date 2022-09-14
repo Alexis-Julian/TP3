@@ -16,10 +16,12 @@ class Productos():
     def __init__(self) -> None:
         self.cod=0
         self.nombre=""
+        self.estado="A"
 class Rubros():
     def __init__(self) -> None:
         self.cod=0
         self.nombre=""
+        self.estado="A"
 class RubrosxProducto():
     def __init__(self) -> None:
         self.codrubro=0
@@ -109,55 +111,45 @@ def mostrar(vr,archf,archl):
             vr=pickle.load(archl)
             print(vr.cod,vr.nombre)
 
-def producto(car,nombre):
-    opcion=input("").upper()
+def alta(car,nombre,al,af):
     clear("cls")
-    match opcion:
-        case "A":
-            print("---------Alta---------")
-            t=os.path.getsize(afp)
-            alp.seek(t)
-            print("[0-Salir] Codigo de ",nombre,": ")
+    print("---------Alta---------")
+    t=os.path.getsize(af)
+    al.seek(t)
+    print("[0-Salir] Codigo de",nombre,": ")
+    codigo=input("")
+    while validar_tipo(int,codigo,0,1000):
+        print("Numero entre [1-1000]")
+        print("[0-Salir] Codigo de",nombre,":")
+        codigo=input("")
+    codigo=int(codigo)
+    while codigo != 0:
+        car.cod=codigo 
+        print("Nombre de",nombre,": ")
+        car.nombre=input("")
+        while len(car.nombre) <0 or len(car.nombre) >20:
+            print("El ",nombre,"debe tener como maximo 20 caracteres")
+            print("Nombre de",nombre,":")
+            car.nombre=input("")
+        formatear(car,0)
+        pickle.dump(car,al)
+        al.flush()
+        print("[0-Salir] Codigo de",nombre,":")
+        codigo=input("")
+        while validar_tipo(int,codigo,0,1000):
+            print("Numero entre [1-1000]")
+            print("[0-Salir] Codigo de",nombre,":")
             codigo=input("")
-            while validar_tipo(int,codigo,0,1000):
-                print("Numero entre [1-1000]")
-                print("[0-Salir] Codigo de ",nombre,": ")
-                codigo=input("")
-            codigo=int(codigo)
-            while codigo != 0:
-                car.cod=codigo 
-                print("Nombre de ",nombre,": ")
-                car.nombre=input("")
-                while len(car.nombre) <0 or len(car.nombre) >20:
-                    print("El ",nombre,"debe tener como maximo 20 caracteres")
-                    print("Nombre de ",nombre,": " )
-                    car.nombre=input("")
-                formatear(car,0)
-                pickle.dump(car,alp)
-                alp.flush()
-                print("[0-Salir] Codigo de",nombre,": ")
-                codigo=input("")
-                while validar_tipo(int,codigo,0,1000):
-                    print("Numero entre [1-1000]")
-                    print("[0-Salir] Codigo de ",nombre,": ")
-                    codigo=input("")
-                codigo=int(codigo)
-            mostrar(car,afp,alp)
-            os.system("pause")
-        case "B":
-            print("")
-        case "C":
-            print("")
-        case "M":
-            print("")
-        case "Z":
-            print("")
-        case "V":
-            pass
-        case _:
-            pass
+        codigo=int(codigo)
+    mostrar(car,af,al)
+    os.system("pause")
 
-    
+
+""" def baja(car,nombre,al,af):
+    opcion=input("Ingrese un codigo ")
+    while 
+ """
+
 
 def menu():
     opc=""
@@ -201,13 +193,13 @@ def administraciones():
             case "B":
                 clear("cls")
                 submenu_administacion_visible()
-                pro=Productos()
-                producto(pro,"producto")
+                car=Productos()
+                alta(car,"Prodcutos",alp,afp)
             case "C":
                 clear("cls")
-                submenu_administacion_visible()
-                rub=Productos()           
-                producto(rub,"rubro")
+                submenu_administacion_visible() #Alta Bajas """
+                rub=Rubros()           
+                alta(rub,"rubro",alr,afr)
  
             case "D":
                 submenu_administacion_visible()
@@ -222,6 +214,24 @@ def administraciones():
             case _:
                 pass                
 
+       
+def busqueda_secuencial(al,af,instancia,cod):
+    bus=instancia()
+    noencontrado=True
+    al.seek(0)
+    t=os.path.getsize(af)
+    while al.tell() <t and noencontrado != False:
+        bus=pickle.load(al)
+        if int(bus.cod) == int(cod):
+            noencontrado=False
+            pos=al.tell()
+        else:
+            pos=-1
+    return pos
+            
+
+
+    
 
 menu()
 

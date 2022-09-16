@@ -1,4 +1,3 @@
-from math import prod
 import os 
 import pickle
 import os.path
@@ -77,11 +76,8 @@ alr=crear_archivos(afr)
 alrxp=crear_archivos(afrxp)
 als=crear_archivos(afs)
 
-
-
-    
-
 #----------------------Procedures1
+
 def construccion():
     print("Esta funcionalidad esta construccion")
     clear("pause")
@@ -95,6 +91,7 @@ def submenu_administacion_visible():
 def menu_visible():
     print("[1] ADMINISTRACIONES \n[2] ENTREGA DE CUPOS \n[3] RECEPCION \n[4] REGISTRAR CALIDAD \n[5] REGISTRAR PESO BRUTO\n[6] REGISTRAR DESCARGA\n[7] REGISTRAR TARA\n[8] REPORTES\n[0] Fin del programa")
 #---------------------Functions
+
 def formatear(obj,b):
     if b==0:
         obj.cod=str(obj.cod)
@@ -111,7 +108,7 @@ def mostrar(vr,archf,archl):
             vr=pickle.load(archl)
             print(vr.cod,vr.nombre)
 
-def alta(car,nombre,al,af):
+def alta_producto_rubro(car,nombre,al,af):
     clear("cls")
     print("---------Alta---------")
     t=os.path.getsize(af)
@@ -142,13 +139,7 @@ def alta(car,nombre,al,af):
             codigo=input("")
         codigo=int(codigo)
     mostrar(car,af,al)
-    os.system("pause")
-
-
-""" def baja(car,nombre,al,af):
-    opcion=input("Ingrese un codigo ")
-    while 
- """
+    clear("pause")
 
 
 def menu():
@@ -187,34 +178,47 @@ def administraciones():
         clear("cls")
         adminstracion_visible()
         opc=input("").upper()
+        if opc == "B"  or opc == "C" or opc== "D" or opc == "E":
+            submenu_administacion(opc)
+        elif opc == "A" or opc =="F" or opc=="G":
+            construccion()            
+        elif opc != "V":
+            print("Opcion invalida")
+            clear("pause")
+        
+
+def submenu_administacion(opc1):
+    opc=""
+    while opc != "V":
+        clear("cls")
+        submenu_administacion_visible()
+        opc=input("").upper()
         match opc:
             case "A":
-                construccion()
+                altas(opc1)
             case "B":
-                clear("cls")
-                submenu_administacion_visible()
-                car=Productos()
-                alta(car,"Prodcutos",alp,afp)
+                print("Hola")
             case "C":
-                clear("cls")
-                submenu_administacion_visible() #Alta Bajas """
-                rub=Rubros()           
-                alta(rub,"rubro",alr,afr)
- 
-            case "D":
-                submenu_administacion_visible()
-            case "E":
-                submenu_administacion_visible()
-            case "F":
-                construccion()
-            case "G":
-                construccion()
+                print("Hola")
+            case "M":
+                print("Hola")
             case "V":
-                pass
+                pass 
             case _:
-                pass                
+                print("Opcion invalida")
+                    
+            
 
-       
+def altas(opc1):
+    if opc1 == "B":
+        car=Productos() #Define donde estas yendo######################
+        alta_producto_rubro(car,"Prodcutos",alp,afp)
+    elif opc1== "C":
+        rub=Rubros() 
+        alta_producto_rubro(rub,"rubro",alr,afr)
+    
+
+  
 def busqueda_secuencial(al,af,instancia,cod):
     bus=instancia()
     noencontrado=True
@@ -229,9 +233,6 @@ def busqueda_secuencial(al,af,instancia,cod):
             pos=-1
     return pos
             
-
-
-    
 
 menu()
 

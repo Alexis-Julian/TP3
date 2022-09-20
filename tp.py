@@ -51,25 +51,31 @@ def validar_tipo(tipo,opc,desde,hasta):
             return True
     except:
         return True
-
+""" ---------------------------------------LJUST---------------------------------- """
+#0-{Rubros,Productos};1-{Silos-RubrosxProductos}
 def formatear(obj,b):
     if b==0:
         obj.cod=str(obj.cod)
         obj.cod=obj.cod.ljust(10," ")
         obj.nombre=obj.nombre.ljust(20," ")
+    elif b==1:
+        obj.valmin=str(obj.valmin)
+        obj.valin=obj.valmin.ljust(2," ")
+        obj.valmax=str(obj.valmax)
+        obj.valmax=obj.valmax.ljust(2," ")
 
+""" --------------------------------------------------------- """
 def busqueda_secuencial(al,af,instancia,cod):
     bus=instancia()
     noencontrado=True
     al.seek(0)
     t=os.path.getsize(af)
+    pos = -1
     while al.tell() <t and noencontrado != False:
         bus=pickle.load(al)
         if int(bus.cod) == int(cod):
             noencontrado=False
             pos=al.tell()
-        else:
-            pos=-1
     return pos
 
 def mostrar(vr,archf,archl):
@@ -150,8 +156,44 @@ def alta_producto_rubro(car,nombre,al,af):
     mostrar(car,af,al)
     clear("pause")
 
-def alta_silos_rubroxproducto(af):
+def alta_silos_rubroxproducto(af,al,car):
     t=os.path.getsize(af)
+    idx1=idx2=-1
+    while idx1 == -1  or idx2==-1:
+        rubro=input("Ingrese codigo de rubro: ")
+        idx1=busqueda_secuencial(alr,afr,RubrosxProducto,rubro)
+        resul=type(idx1)
+        print(resul)
+        codigo=input("Ingrese codigo de producto: ")
+        idx2=busqueda_secuencial(alp,afp,RubrosxProducto,codigo)
+        resul=type(idx2)
+        print(resul)
+        print(idx2)
+        if  idx1 == -1:
+            print("Error. El codigo de rubro ingresado no existe.")
+        elif idx2== -1:
+            print("Error. El codigo de producto ingresado no existe.")
+    valmin,valmax=rubroxproducto_valminmax()
+    al.seek(t)
+    car.codrubro=rubro
+    car.codpro=codigo
+    car.valmin=valmin
+    car.valmax=valmax
+    formatear(car,1)
+    pickle.dump(car,al)
+    al.flush()
+    
+def rubroxproducto_valminmax():
+    valmin=input("Ingrese el valor minimo: ")    
+    while validar_tipo(int,valmin,0,100):
+        print("Error. Debe ingresar un numero valido.")
+        valmin=input("Intente nuevamente: ")
+    valmax=input("Ingrese el valor maximos: ")
+    while validar_tipo(int,valmax,int(valmin),100):
+        print("Error. Debe ingresar un numero valido.")
+        valmax=input("Intente nuevamente: ")
+    return valmin,valmax
+    
 
 def submenu_administacion(opc1):
     opc=""
@@ -180,7 +222,10 @@ def altas(opc1):
     elif opc1== "C":
         rub=Rubros() 
         alta_producto_rubro(rub,"rubro",alr,afr)
-    
+    elif opc1=="D":
+        car=RubrosxProducto() 
+        alta_silos_rubroxproducto(afrxp,alrxp,car)
+
 def administraciones():
     opc=""
     while opc != "V":
@@ -194,7 +239,7 @@ def administraciones():
         elif opc != "V":
             print("Opcion invalida")
             clear("pause")
-  
+
 def menu():
     opc=""
     while opc != "0":
@@ -225,9 +270,21 @@ def menu():
             case _:
                 pass
 
-            
+
+
+
 
 menu()
+
+t=os.path.getsize(afrxp)
+alrxp.seek(0)
+if t  == 0:
+    print("nO HAY ARCGIVOS")
+else:
+    while alrxp.tell() <t:
+        car=pickle.load(alrxp)
+        print(car.codrubro,car.codpro)
+
 
 
 

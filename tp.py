@@ -1,6 +1,7 @@
 import os 
 import pickle
 import os.path
+import datetime
 clear = lambda x: os.system(x)
 
 class Operaciones():
@@ -36,7 +37,7 @@ class Silos():
 
 """ ---------------------------DEF---------------------- """
         
-def validarpatente(opc):
+def validar_patente(opc):
     if len(opc) >=6 and len(opc) <=7:
         return False
     else:
@@ -63,8 +64,19 @@ def formatear(obj,b):
         obj.valin=obj.valmin.ljust(2," ")
         obj.valmax=str(obj.valmax)
         obj.valmax=obj.valmax.ljust(2," ")
-
+    elif b==3:
+        obj.codsilo=obj.codsilo.ljust(10," ")
+        obj.nombre=obj.nombre.ljust(10," ")
+        obj.codpro=obj.codpro.ljsut(10," ")
+        obj.stock=obj.stock.ljust(5," ")
 """ --------------------------------------------------------- """
+def validar_longitud(a,hasta):
+    opc=input(a)
+    while len(opc) > hasta:
+        print("Error ingrese una longiutd menor a",hasta)
+        opc=input("")
+    return opc
+
 def busqueda_secuencial(al,af,instancia,cod):
     bus=instancia()
     noencontrado=True
@@ -122,7 +134,7 @@ def menu_visible():
     print("[1] ADMINISTRACIONES \n[2] ENTREGA DE CUPOS \n[3] RECEPCION \n[4] REGISTRAR CALIDAD \n[5] REGISTRAR PESO BRUTO\n[6] REGISTRAR DESCARGA\n[7] REGISTRAR TARA\n[8] REPORTES\n[0] Fin del programa")
 
 #---------------------Functions
-
+""" ---------------------Alta Rubros Productos------------------ """
 def alta_producto_rubro(car,nombre,al,af):
     clear("cls")
     print("---------Alta---------")
@@ -155,7 +167,7 @@ def alta_producto_rubro(car,nombre,al,af):
         codigo=int(codigo)
     mostrar(car,af,al)
     clear("pause")
-
+""" --------------------Alta RubroXProducot----------------------------------- """
 def alta_silos_rubroxproducto(af,al,car):
     t=os.path.getsize(af)
     idx1=idx2=-1
@@ -182,7 +194,8 @@ def alta_silos_rubroxproducto(af,al,car):
     formatear(car,1)
     pickle.dump(car,al)
     al.flush()
-    
+
+
 def rubroxproducto_valminmax():
     valmin=input("Ingrese el valor minimo: ")    
     while validar_tipo(int,valmin,0,100):
@@ -194,6 +207,29 @@ def rubroxproducto_valminmax():
         valmax=input("Intente nuevamente: ")
     return valmin,valmax
     
+""" -------------------------Alta Silos--------------------------- """
+def silos(af,al,car):
+    global alp
+    t=os.path.getsize(af)
+    codigo=validar_longitud("Ingrese un codigo: ",10)
+    nombre=validar_longitud("Ingrese un nombre: ",10)
+    regp = Productos()
+    idx=-1
+    while idx ==-1:
+        codpro=validar_longitud("Ingrese un codigo de producto: ",10)
+        idx=busqueda_secuencial(alp,afp,Productos,codpro)
+        alp.seek(idx)
+        regp = pickle.load(alp)   
+    stock=validar_longitud("Ingrese un codigo de stock: ",10)
+    al.seek(t)
+    car.codsilo=codigo
+    car.nombre=nombre
+    car.codpro=regp.cod
+    print(car.codpro)
+    car.stock=stock
+    formatear(car,3)
+    pickle.dump(car,al)
+    al.flush()
 
 def submenu_administacion(opc1):
     opc=""
@@ -225,6 +261,10 @@ def altas(opc1):
     elif opc1=="D":
         car=RubrosxProducto() 
         alta_silos_rubroxproducto(afrxp,alrxp,car)
+    elif opc1 =="E":
+        sil=Silos()
+        silos(afs,als,sil)
+
 
 def administraciones():
     opc=""
@@ -240,6 +280,37 @@ def administraciones():
             print("Opcion invalida")
             clear("pause")
 
+
+
+
+def ingreso_fecha():
+    ban = True
+    while ban:
+        try:
+            fecha = input("Ingrese fecha en formato DD-MM-AAAA: ")
+            datetime.datetime.strptime(fecha, '%d/%m/%y')
+            ban = False
+            print("Fecha Valida")
+        except ValueError:
+            print("Fecha Invalida")
+    dia,mes,ano = fecha.split("-")
+    fecha = datetime.datetime.now()
+    fecha = datetime.datetime.now().strftime("%x") #dia-mes-ano
+    return fecha
+            
+
+def entrega_cupos():
+    pat = input("Ingrese patente: ")
+    while(validar_patente(pat)):
+        print("Error.La patente ingresada es invalida. Intente nuevamente")
+        pat = input("Ingrese patente: ")
+    #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
+    fecha = ingreso_fecha()
+    print(fecha)
+    input("aprete enteer: ")
+
+
+
 def menu():
     opc=""
     while opc != "0":
@@ -250,7 +321,7 @@ def menu():
             case "1":
                 administraciones()
             case "2":
-                print("hola")
+                entrega_cupos()
             case "3":
                 print("hola")
             case "4":
@@ -271,22 +342,15 @@ def menu():
                 pass
 
 
-
-
-
 menu()
 
 t=os.path.getsize(afrxp)
 alrxp.seek(0)
 if t  == 0:
-    print("nO HAY ARCGIVOS")
+    print("No hay archivos")
 else:
     while alrxp.tell() <t:
         car=pickle.load(alrxp)
         print(car.codrubro,car.codpro)
-
-
-
-
 
 

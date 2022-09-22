@@ -36,7 +36,7 @@ class Silos():
         self.codpro=0
         self.stock=0
 
-""" ---------------------------DEF---------------------- """
+""" ---------------------------Funcionales---------------------- """
         
 def validar_patente(opc):
     if len(opc) >=6 and len(opc) <=7:
@@ -55,8 +55,14 @@ def validar_tipo(tipo,opc,desde,hasta):
         opc = tipo(input("Intente nuevamente: "))
         validar_tipo(tipo,opc,desde,hasta)
     return opc
-""" ---------------------------------------LJUST---------------------------------- """
-#0-{Rubros,Productos};1-{Silos-RubrosxProductos}
+
+def validar_longitud(mensaje,hasta):
+    opc = input(mensaje)
+    while len(opc) > hasta:
+        print("Error. La longitud del codigo debe ser menor a",hasta)
+        opc = input("Intente nuevamente: ")
+    return opc
+
 def formatear(obj,b):
     if b==0:
         obj.cod=str(obj.cod)
@@ -72,13 +78,6 @@ def formatear(obj,b):
         obj.nombre=obj.nombre.ljust(10," ")
         obj.codpro=obj.codpro.ljust(10," ")
         obj.stock=obj.stock.ljust(5," ")
-""" --------------------------------------------------------- """
-def validar_longitud(mensaje,hasta):
-    opc = input(mensaje)
-    while len(opc) > hasta:
-        print("Error. La longitud del codigo debe ser menor a",hasta)
-        opc = input("Intente nuevamente: ")
-    return opc
 
 def busqueda_secuencial(al,af,instancia,cod):
     bus=instancia()
@@ -123,7 +122,7 @@ alp=crear_archivos(afp)
 alr=crear_archivos(afr)
 alrxp=crear_archivos(afrxp)
 als=crear_archivos(afs)
-#----------------------Procedures1
+""" --------------Procedure-------------------- """
 
 def construccion():
     print("Esta funcionalidad esta construccion")
@@ -138,8 +137,8 @@ def submenu_administacion_visible():
 def menu_visible():
     print("[1] ADMINISTRACIONES \n[2] ENTREGA DE CUPOS \n[3] RECEPCION \n[4] REGISTRAR CALIDAD \n[5] REGISTRAR PESO BRUTO\n[6] REGISTRAR DESCARGA\n[7] REGISTRAR TARA\n[8] REPORTES\n[0] Fin del programa")
 
-#---------------------Functions
-""" ---------------------Alta Rubros Productos------------------ """
+""" #---------------------Functions-Main-------------------# """
+""" ---------------------Rubros_Productos--------------------------- """
 def alta_producto_rubro(car,nombre,al,af):
     clear("cls")
     print("---------Alta---------")
@@ -163,14 +162,53 @@ def alta_producto_rubro(car,nombre,al,af):
         
     mostrar(car,af,al)
     clear("pause")
-""" --------------------Alta RubroXProducot----------------------------------- """
+
+def baja_producto(af,al,car):
+    car=Productos()
+    t=os.path.getsize(af)
+    print("Ingrese codigo que desea dar de baja logicamente [0]-Salir")
+    codigo=validar_longitud("Codigo: ",10)
+    codigo=int(codigo)
+    while codigo != 0 and t != 0:
+        idx=busqueda_secuencial(al,af,Productos,codigo)
+        if idx !=-1:
+            al.seek(idx)
+            car=pickle.load(al)
+            car.estado="B"
+            al.seek(idx)
+            pickle.dump(car,al)
+            al.flush()
+        else:
+            print("El codigo ingresado no existe")
+        print("Ingrese codigo que desea dar de baja logicamente [0]-Salir")
+        codigo=validar_longitud("Codigo: ",10)
+        codigo=int(codigo)
+        
+
+def consulta_producto(af,al,car,nombre):
+    clear("cls")
+    t=os.path.getsize(af)
+    al.seek(0)
+    salida=""
+    salida+="{:<24}".format(nombre)
+    salida+="{:<40}".format("Codigo")
+    salida+="{:<40}".format("Estado")
+    print(salida)
+    print("---------------------------------------------------------------")
+    while al.tell() < t:
+        car=pickle.load(al)
+        salida=" "
+        salida+="{:<25}".format(car.nombre)
+        salida+="{:<40}".format(car.cod)
+        salida+="{:<25}".format(car.estado)
+        print(salida)
+    clear("pause")
+    
+""" ----------------------RubroXProducto--------------------------- """
 def alta_silos_rubroxproducto(af,al,car):
     t = os.path.getsize(af)
-
-
     # ____________________________ ESTO HAY QUE HACERLO FUNCION___ LA BUSQUEDA DE CODIGOS YA SEA
     # DE RUBBROS O PRODUCTOS SE HACE EN RUBROXPRODUCTO, SILOS (Y CAPAPZ OPERACIONES)
-    
     idx1=idx2=-1
     while idx1 == -1:
         codrubro = input("Ingrese codigo de rubro: ")
@@ -199,7 +237,7 @@ def rubroxproducto_valminmax():
     valmax = validar_tipo(int,input("Ingrese el valor maximo: "),valmin,100)
     return valmin,valmax
     
-""" -------------------------Alta Silos--------------------------- """
+""" --------------------------Silos--------------------------- """
 def silos(af,al,car):
     global alp,afp
     t = os.path.getsize(af)
@@ -223,6 +261,8 @@ def silos(af,al,car):
     pickle.dump(car,al)
     al.flush()
 
+""" --------------------------Menu--------------------------- """
+
 def submenu_administacion(opc1):
     opc=""
     while opc != "V":
@@ -233,9 +273,9 @@ def submenu_administacion(opc1):
             case "A":
                 altas(opc1)
             case "B":
-                print("Hola")
+                bajas(opc1)
             case "C":
-                print("Hola")
+                consultas(opc1)
             case "M":
                 print("Hola")
             case "V":
@@ -258,6 +298,21 @@ def altas(opc1):
         silos(afs,als,sil)
 
 
+def consultas(opc1):
+    if opc1 == "B":
+        car=Productos() #Define donde estas yendo######################
+        consulta_producto(afp,alp,car,"Producto")
+    elif opc1 =="C" or opc1 =="D" or opc1 =="E":
+        construccion()
+
+def bajas(opc1):
+    if opc1 == "B":
+        car=Productos() #Define donde estas yendo######################
+        baja_producto(afp,alp,car)
+    elif opc1 =="C" or opc1 =="D" or opc1 =="E":
+        construccion()
+
+
 def administraciones():
     opc=""
     while opc != "V":
@@ -271,8 +326,6 @@ def administraciones():
         elif opc != "V":
             print("Opcion invalida")
             clear("pause")
-
-
 
 
 def ingreso_fecha():
@@ -335,14 +388,3 @@ def menu():
 
 
 menu()
-
-t=os.path.getsize(afrxp)
-alrxp.seek(0)
-if t  == 0:
-    print("No hay archivos")
-else:
-    while alrxp.tell() <t:
-        car=pickle.load(alrxp)
-        print(car.codrubro,car.codpro)
-
-

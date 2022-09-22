@@ -2,6 +2,7 @@ import os
 import pickle
 import os.path
 import datetime
+from re import A
 clear = lambda x: os.system(x)
 
 class Operaciones():
@@ -46,12 +47,14 @@ def validar_patente(opc):
 def validar_tipo(tipo,opc,desde,hasta):
     try:
         opc=tipo(opc)
-        if opc >= desde and opc <= hasta:
-             return False
-        else:
-            return True
+        while opc < desde or opc > hasta:
+            print("Error. El numero ingresado debe estar entre",desde,"y",hasta)
+            opc = tipo(input("Intente nuevamente: "))
     except:
-        return True
+        print("Error. Debe ingresar un numero.")
+        opc = tipo(input("Intente nuevamente: "))
+        validar_tipo(tipo,opc,desde,hasta)
+    return opc
 """ ---------------------------------------LJUST---------------------------------- """
 #0-{Rubros,Productos};1-{Silos-RubrosxProductos}
 def formatear(obj,b):
@@ -67,28 +70,30 @@ def formatear(obj,b):
     elif b==3:
         obj.codsilo=obj.codsilo.ljust(10," ")
         obj.nombre=obj.nombre.ljust(10," ")
-        obj.codpro=obj.codpro.ljsut(10," ")
+        obj.codpro=obj.codpro.ljust(10," ")
         obj.stock=obj.stock.ljust(5," ")
 """ --------------------------------------------------------- """
-def validar_longitud(a,hasta):
-    opc=input(a)
+def validar_longitud(mensaje,hasta):
+    opc = input(mensaje)
     while len(opc) > hasta:
-        print("Error ingrese una longiutd menor a",hasta)
-        opc=input("")
+        print("Error. La longitud del codigo debe ser menor a",hasta)
+        opc = input("Intente nuevamente: ")
     return opc
 
 def busqueda_secuencial(al,af,instancia,cod):
     bus=instancia()
-    noencontrado=True
+    encontrado = False
     al.seek(0)
     t=os.path.getsize(af)
-    pos = -1
-    while al.tell() <t and noencontrado != False:
-        bus=pickle.load(al)
+    while al.tell() <t and encontrado == False:
+        pos = al.tell()
+        bus = pickle.load(al)
         if int(bus.cod) == int(cod):
-            noencontrado=False
-            pos=al.tell()
-    return pos
+            encontrado = True
+    if encontrado:
+        return pos
+    else:
+        return -1
 
 def mostrar(vr,archf,archl):
     t=os.path.getsize(archf)
@@ -140,55 +145,48 @@ def alta_producto_rubro(car,nombre,al,af):
     print("---------Alta---------")
     t=os.path.getsize(af)
     al.seek(t)
-    print("[0-Salir] Codigo de",nombre,": ")
-    codigo=input("")
-    while validar_tipo(int,codigo,0,1000):
-        print("Numero entre [1-1000]")
-        print("[0-Salir] Codigo de",nombre,":")
-        codigo=input("")
-    codigo=int(codigo)
+    print("Seleccione codigo de",nombre,". Presione 0 para salir")
+    codigo = validar_tipo(int,input("Codigo: "),0,1000)
     while codigo != 0:
         car.cod=codigo 
         print("Nombre de",nombre,": ")
         car.nombre=input("")
-        while len(car.nombre) <0 or len(car.nombre) >20:
+        while len(car.nombre)<0 or len(car.nombre)>20:
             print("El ",nombre,"debe tener como maximo 20 caracteres")
             print("Nombre de",nombre,":")
             car.nombre=input("")
         formatear(car,0)
         pickle.dump(car,al)
         al.flush()
-        print("[0-Salir] Codigo de",nombre,":")
-        codigo=input("")
-        while validar_tipo(int,codigo,0,1000):
-            print("Numero entre [1-1000]")
-            print("[0-Salir] Codigo de",nombre,":")
-            codigo=input("")
-        codigo=int(codigo)
+        print("Seleccione codigo de",nombre,". Presione 0 para salir")
+        codigo = validar_tipo(int,input("Codigo: "),0,1000)
+        
     mostrar(car,af,al)
     clear("pause")
 """ --------------------Alta RubroXProducot----------------------------------- """
 def alta_silos_rubroxproducto(af,al,car):
-    t=os.path.getsize(af)
+    t = os.path.getsize(af)
+
+
+    # ____________________________ ESTO HAY QUE HACERLO FUNCION___ LA BUSQUEDA DE CODIGOS YA SEA
+    # DE RUBBROS O PRODUCTOS SE HACE EN RUBROXPRODUCTO, SILOS (Y CAPAPZ OPERACIONES)
+    
     idx1=idx2=-1
-    while idx1 == -1  or idx2==-1:
-        rubro=input("Ingrese codigo de rubro: ")
-        idx1=busqueda_secuencial(alr,afr,RubrosxProducto,rubro)
-        resul=type(idx1)
-        print(resul)
-        codigo=input("Ingrese codigo de producto: ")
-        idx2=busqueda_secuencial(alp,afp,RubrosxProducto,codigo)
-        resul=type(idx2)
-        print(resul)
-        print(idx2)
+    while idx1 == -1:
+        codrubro = input("Ingrese codigo de rubro: ")
+        idx1 = busqueda_secuencial(alr,afr,Rubros,codrubro)
         if  idx1 == -1:
             print("Error. El codigo de rubro ingresado no existe.")
-        elif idx2== -1:
+    while idx2==-1:
+        codproducto = input("Ingrese codigo de producto: ")
+        idx2 = busqueda_secuencial(alp,afp,Productos,codproducto)
+        if idx2== -1:
             print("Error. El codigo de producto ingresado no existe.")
+
     valmin,valmax=rubroxproducto_valminmax()
     al.seek(t)
-    car.codrubro=rubro
-    car.codpro=codigo
+    car.codrubro=codrubro
+    car.codpro=codproducto
     car.valmin=valmin
     car.valmax=valmax
     formatear(car,1)
@@ -197,30 +195,24 @@ def alta_silos_rubroxproducto(af,al,car):
 
 
 def rubroxproducto_valminmax():
-    valmin=input("Ingrese el valor minimo: ")    
-    while validar_tipo(int,valmin,0,100):
-        print("Error. Debe ingresar un numero valido.")
-        valmin=input("Intente nuevamente: ")
-    valmax=input("Ingrese el valor maximos: ")
-    while validar_tipo(int,valmax,int(valmin),100):
-        print("Error. Debe ingresar un numero valido.")
-        valmax=input("Intente nuevamente: ")
+    valmin = validar_tipo(int,input("Ingrese el valor minimo: "),0,100)
+    valmax = validar_tipo(int,input("Ingrese el valor maximo: "),valmin,100)
     return valmin,valmax
     
 """ -------------------------Alta Silos--------------------------- """
 def silos(af,al,car):
-    global alp
-    t=os.path.getsize(af)
-    codigo=validar_longitud("Ingrese un codigo: ",10)
-    nombre=validar_longitud("Ingrese un nombre: ",10)
+    global alp,afp
+    t = os.path.getsize(af)
+    codigo = validar_longitud("Ingrese el codigo de silo: ",10)
+    nombre = validar_longitud("Ingrese un nombre: ",10)
     regp = Productos()
     idx=-1
     while idx ==-1:
-        codpro=validar_longitud("Ingrese un codigo de producto: ",10)
-        idx=busqueda_secuencial(alp,afp,Productos,codpro)
-        alp.seek(idx)
-        regp = pickle.load(alp)   
-    stock=validar_longitud("Ingrese un codigo de stock: ",10)
+        codpro = validar_longitud("Ingrese un codigo de producto: ",10)
+        idx = busqueda_secuencial(alp,afp,Productos,codpro)
+    alp.seek(idx)
+    regp = pickle.load(alp)   
+    stock = validar_longitud("Ingrese un codigo de stock: ",10)
     al.seek(t)
     car.codsilo=codigo
     car.nombre=nombre
@@ -236,7 +228,7 @@ def submenu_administacion(opc1):
     while opc != "V":
         clear("cls")
         submenu_administacion_visible()
-        opc=input("").upper()
+        opc=input("Seleccione una opcion: ").upper()
         match opc:
             case "A":
                 altas(opc1)
@@ -254,7 +246,7 @@ def submenu_administacion(opc1):
 def altas(opc1):
     if opc1 == "B":
         car=Productos() #Define donde estas yendo######################
-        alta_producto_rubro(car,"Prodcutos",alp,afp)
+        alta_producto_rubro(car,"producto",alp,afp)
     elif opc1== "C":
         rub=Rubros() 
         alta_producto_rubro(rub,"rubro",alr,afr)
@@ -271,7 +263,7 @@ def administraciones():
     while opc != "V":
         clear("cls")
         adminstracion_visible()
-        opc=input("").upper()
+        opc=input("Seleccione una opcion: ").upper()
         if opc == "B"  or opc == "C" or opc== "D" or opc == "E":
             submenu_administacion(opc)
         elif opc == "A" or opc =="F" or opc=="G":
@@ -316,7 +308,7 @@ def menu():
     while opc != "0":
         clear("cls")
         menu_visible()
-        opc=input("")
+        opc=input("Seleccione una opcion: ")
         match opc:
             case "1":
                 administraciones()

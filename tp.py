@@ -280,14 +280,11 @@ def ingreso_fecha():
     while ban:
         try:
             fecha = input("Ingrese fecha en formato DD-MM-AAAA: ")
-            datetime.datetime.strptime(fecha, '%d/%m/%y')
+            datetime.datetime.strptime(fecha, '%d-%m-%Y')
             ban = False
             print("Fecha Valida")
         except ValueError:
             print("Fecha Invalida")
-    dia,mes,ano = fecha.split("-")
-    fecha = datetime.datetime.now()
-    fecha = datetime.datetime.now().strftime("%x") #dia-mes-ano
     return fecha
             
 
@@ -298,8 +295,8 @@ def entrega_cupos():
         pat = input("Ingrese patente: ")
     #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
     fecha = ingreso_fecha()
-    print(fecha)
-    input("aprete enteer: ")
+    print("Aca se imprime la fecha en hd",fecha)
+    input("Ingrese contraseña de git: ")
 
 
 

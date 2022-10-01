@@ -79,8 +79,7 @@ def formatear(obj,b):
         obj.codpro=obj.codpro.ljust(10," ")
         obj.stock=obj.stock.ljust(5," ")
 
-def busqueda_secuencial(al,af,instancia,cod):
-    bus=instancia()
+def busqueda_secuencial(al,af,bus,cod):
     encontrado = False
     al.seek(0)
     t=os.path.getsize(af)
@@ -170,10 +169,8 @@ def baja_producto(af,al,car):
     codigo=validar_longitud("Codigo: ",10)
     codigo=int(codigo)
     while codigo != 0 and t != 0:
-        idx=busqueda_secuencial(al,af,Productos,codigo)
+        idx=busqueda_secuencial(al,af,car,codigo)
         if idx !=-1:
-            al.seek(idx)
-            car=pickle.load(al)
             car.estado="B"
             al.seek(idx)
             pickle.dump(car,al)
@@ -210,14 +207,16 @@ def alta_silos_rubroxproducto(af,al,car):
     # ____________________________ ESTO HAY QUE HACERLO FUNCION___ LA BUSQUEDA DE CODIGOS YA SEA
     # DE RUBBROS O PRODUCTOS SE HACE EN RUBROXPRODUCTO, SILOS (Y CAPAPZ OPERACIONES)
     idx1=idx2=-1
+    rub=Rubros()
+    pro=Productos()
     while idx1 == -1:
         codrubro = input("Ingrese codigo de rubro: ")
-        idx1 = busqueda_secuencial(alr,afr,Rubros,codrubro)
+        idx1 = busqueda_secuencial(alr,afr,rub,codrubro)
         if  idx1 == -1:
             print("Error. El codigo de rubro ingresado no existe.")
     while idx2==-1:
         codproducto = input("Ingrese codigo de producto: ")
-        idx2 = busqueda_secuencial(alp,afp,Productos,codproducto)
+        idx2 = busqueda_secuencial(alp,afp,pro,codproducto)
         if idx2== -1:
             print("Error. El codigo de producto ingresado no existe.")
 
@@ -247,7 +246,7 @@ def silos(af,al,car):
     idx=-1
     while idx ==-1:
         codpro = validar_longitud("Ingrese un codigo de producto: ",10)
-        idx = busqueda_secuencial(alp,afp,Productos,codpro)
+        idx = busqueda_secuencial(alp,afp,regp,codpro)
     alp.seek(idx)
     regp = pickle.load(alp)   
     stock = validar_longitud("Ingrese un codigo de stock: ",10)
@@ -330,29 +329,62 @@ def administraciones():
 
 def ingreso_fecha():
     ban = True
+    t=os.path.getsize(afo)
+    alo.seek(0)
     while ban:
         try:
             fecha = input("Ingrese fecha en formato DD-MM-AAAA: ")
-            datetime.datetime.strptime(fecha, '%d/%m/%y')
+            datetime.datetime.strptime(fecha, '%d-%m-%Y')
             ban = False
             print("Fecha Valida")
         except ValueError:
             print("Fecha Invalida")
-    dia,mes,ano = fecha.split("-")
-    fecha = datetime.datetime.now()
-    fecha = datetime.datetime.now().strftime("%x") #dia-mes-ano
     return fecha
-            
 
+
+def busqueda_sec_op(pat,fecha):
+    rego = Operaciones()
+    t = os.path.getsize(afo)
+    encontrado = False
+    alo.seek(0)
+    while alo.tell() < t and encontrado==False:
+        pos = alo.tell()
+        rego = pickle.load(alo)
+        if rego.patente == pat and rego.fechacupo == fecha and rego.estado == "":
+            idx = pos
+            encontrado = True
+    if encontrado:
+        return -1
+    else:
+        return idx
+        
 def entrega_cupos():
-    pat = input("Ingrese patente: ")
-    while(validar_patente(pat)):
-        print("Error.La patente ingresada es invalida. Intente nuevamente")
+    pro=Productos()
+    ope=Operaciones()
+    op=-1
+    while op != 0:
         pat = input("Ingrese patente: ")
-    #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
-    fecha = ingreso_fecha()
-    print(fecha)
-    input("aprete enteer: ")
+        while(validar_patente(pat) and pat != "0"):
+            print("Error.La patente ingresada es invalida. Intente nuevamente")
+            pat = input("Ingrese patente: ")
+        #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
+        # verificar que la patente no tenga cupos en esa fecha
+        fecha = ingreso_fecha(pat)
+        aux=busqueda_sec_op(pat,fecha)
+        if aux != -1:
+            idx=-1
+            while idx == -1:
+                producto=input("Ingrese el codigo del producto: ")
+                idx=busqueda_secuencial(alp,afp,pro,producto)
+            
+            opc=input("Presione [0] para alir y [1] para continuar:")
+            clear("pause")
+        else:
+            print("Asheee")
+            
+        
+
+
 
 
 

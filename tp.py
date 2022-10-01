@@ -364,6 +364,7 @@ def entrega_cupos():
     op=-1
     while op != 0:
         pat = input("Ingrese patente: ")
+<<<<<<< HEAD
         while(validar_patente(pat) and pat != "0"):
             print("Error.La patente ingresada es invalida. Intente nuevamente")
             pat = input("Ingrese patente: ")
@@ -385,6 +386,12 @@ def entrega_cupos():
         
 
 
+=======
+    #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
+    fecha = ingreso_fecha()
+    print("Aca se imprime la fecha en hd",fecha)
+    input("Ingrese contraseña de git: ")
+>>>>>>> e5a4739d0720e428b8eb90327c6b091fe2144a14
 
 
 

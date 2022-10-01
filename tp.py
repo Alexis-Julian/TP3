@@ -9,7 +9,7 @@ class Operaciones():
     def __init__(self) -> None:
         self.patente=""
         self.codpro=0
-        self.fechacupo=[0]*3
+        self.fechacupo=""
         self.estado=""
         self.bruto=0
         self.tara=0
@@ -38,11 +38,16 @@ class Silos():
 
 """ ---------------------------Funcionales---------------------- """
         
-def validar_patente(opc):
-    if len(opc) >=6 and len(opc) <=7:
-        return False
-    else:
-        return True
+def validar_patente(patent):
+    espacios = " " in patent
+    while not(len(patent) >=6 and len(patent) <=7) or espacios:
+        if(espacios):
+            print("Error. La patente no debe contener espacios.")
+        if not(len(patent) >=6 and len(patent) <=7):
+            print("Error. La patente debe tener entre 6 y 7 caracteres de longitud.")
+        print("Intente nuevamente...")
+        patent = input("Ingrese patente: ")
+    return patent.upper()
 
 def validar_tipo(tipo,opc,desde,hasta):
     try:
@@ -86,7 +91,7 @@ def busqueda_secuencial(al,af,bus,cod):
     while al.tell() <t and encontrado == False:
         pos = al.tell()
         bus = pickle.load(al)
-        if int(bus.cod) == int(cod):
+        if bus.cod.strip() == cod:
             encontrado = True
     if encontrado:
         return pos
@@ -328,9 +333,8 @@ def administraciones():
 
 
 def ingreso_fecha():
+    print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
     ban = True
-    t=os.path.getsize(afo)
-    alo.seek(0)
     while ban:
         try:
             fecha = input("Ingrese fecha en formato DD-MM-AAAA: ")
@@ -342,46 +346,50 @@ def ingreso_fecha():
     return fecha
 
 
-def busqueda_sec_op(pat,fecha):
-    rego = Operaciones()
+def busqueda_sec_op(rego,pat,fecha):
     t = os.path.getsize(afo)
     encontrado = False
     alo.seek(0)
-    idx = -1
     while alo.tell() < t and encontrado==False:
-        pos = alo.tell()
         rego = pickle.load(alo)
         if rego.patente == pat and rego.fechacupo == fecha:
-            idx = pos
             encontrado = True
-    if(encontrado and rego.en):
-        print("El camion ya ha recibido el cupo para esa fecha")
-    return idx
+    return encontrado
         
 def entrega_cupos():
-    pro=Productos()
-    ope=Operaciones()
-    op=-1
-    while op != 0:
-        pat = input("Ingrese patente: ")
-        while(validar_patente(pat) and pat != "0"):
-            print("Error.La patente ingresada es invalida. Intente nuevamente")
-            pat = input("Ingrese patente: ")
-        #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
+    regpro=Productos()
+    rego=Operaciones()
+    op="1"
+    while op != "0":
+        continuar = True
+        pat = validar_patente(input("Ingrese patente: "))
         # verificar que la patente no tenga cupos en esa fecha
         fecha = ingreso_fecha()
-        idx=busqueda_sec_op(pat,fecha)
-        if idx == -1:
-            while (aux=busqueda()):
-                print("hola")
-                pass
+        if busqueda_sec_op(rego,pat,fecha) and rego.estado!="":
+            print("Error. Cupo ya otorgado")
+            continuar = False
+        if continuar:
+            idx = busqueda_secuencial(alp,afp,regpro,input("Ingrese el codigo del producto: "))
+            if idx == -1:
+                print("Error. El codigo de producto ingresado no existe.")
+                continuar = False
+            else:
+                alp.seek(idx)
+                regpro = pickle.load(alp)
+        if continuar:
+            t = os.path.getsize(afo)
+            alo.seek(t)
+            rego.patente = pat
+            rego.codpro = regpro.cod
+            rego.fechacupo = fecha
+            rego.estado="P"
+            pickle.dump(rego,alo)
+            alo.flush()
+            print("Cupo entregado con exito. Estado [Pendiente]")
 
-            while( busqueda_secuencial(alp,afp,pro,input("Ingrese el codigo del producto: "))==-1):
-                print("Error. El codigo de producto ingresado ono existe.")
-            
-            
-        op=input("Presione [0] para alir y [1] para continuar:")
-            
+        op=input("Presione [0] para salir y [1] para continuar:")
+        while op!="0" and op!="1":
+            op=input("Presione [0] para salir y [1] para continuar:")
         
 
 
@@ -420,3 +428,14 @@ def menu():
 
 
 menu()
+def mostrar2(vr,archf,archl):
+    t=os.path.getsize(archf)
+    archl.seek(0)
+    if t== 0:
+        print("No hay nda")
+    else:
+        while archl.tell() < t:
+            vr=pickle.load(archl)
+            print(vr.patente,vr.codpro,vr.fechacupo,vr.estado)
+oper = Operaciones()
+mostrar2(oper,afo,alo)

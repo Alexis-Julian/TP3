@@ -347,16 +347,16 @@ def busqueda_sec_op(pat,fecha):
     t = os.path.getsize(afo)
     encontrado = False
     alo.seek(0)
+    idx = -1
     while alo.tell() < t and encontrado==False:
         pos = alo.tell()
         rego = pickle.load(alo)
-        if rego.patente == pat and rego.fechacupo == fecha and rego.estado == "":
+        if rego.patente == pat and rego.fechacupo == fecha:
             idx = pos
             encontrado = True
-    if encontrado:
-        return -1
-    else:
-        return idx
+    if(encontrado and rego.en):
+        print("El camion ya ha recibido el cupo para esa fecha")
+    return idx
         
 def entrega_cupos():
     pro=Productos()
@@ -364,34 +364,27 @@ def entrega_cupos():
     op=-1
     while op != 0:
         pat = input("Ingrese patente: ")
-<<<<<<< HEAD
         while(validar_patente(pat) and pat != "0"):
             print("Error.La patente ingresada es invalida. Intente nuevamente")
             pat = input("Ingrese patente: ")
         #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
         # verificar que la patente no tenga cupos en esa fecha
-        fecha = ingreso_fecha(pat)
-        aux=busqueda_sec_op(pat,fecha)
-        if aux != -1:
-            idx=-1
-            while idx == -1:
-                producto=input("Ingrese el codigo del producto: ")
-                idx=busqueda_secuencial(alp,afp,pro,producto)
+        fecha = ingreso_fecha()
+        idx=busqueda_sec_op(pat,fecha)
+        if idx == -1:
+            while (aux=busqueda()):
+                print("hola")
+                pass
+
+            while( busqueda_secuencial(alp,afp,pro,input("Ingrese el codigo del producto: "))==-1):
+                print("Error. El codigo de producto ingresado ono existe.")
             
-            opc=input("Presione [0] para alir y [1] para continuar:")
-            clear("pause")
-        else:
-            print("Asheee")
+            
+        op=input("Presione [0] para alir y [1] para continuar:")
             
         
 
 
-=======
-    #print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
-    fecha = ingreso_fecha()
-    print("Aca se imprime la fecha en hd",fecha)
-    input("Ingrese contraseña de git: ")
->>>>>>> e5a4739d0720e428b8eb90327c6b091fe2144a14
 
 
 

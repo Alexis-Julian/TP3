@@ -72,18 +72,18 @@ def validar_longitud(mensaje,hasta):
     return opc
 
 def formatear(obj,b):
-    if b==0: #RUBROS || PRODUCTOS
+    if b==0: # PRODUCTOS || RUBROS
         obj.cod=str(obj.cod).ljust(10," ")
         obj.nombre=obj.nombre.ljust(20," ")
-    elif b==1: #RUBROSXPRODUCTO
+    elif b==1: # RUBROSXPRODUCTO
         obj.valin=str(obj.valmin).ljust(5," ")
         obj.valmax=str(obj.valmax).ljust(5," ")
-    elif b==3: #SILOS
+    elif b==3: # SILOS
         obj.codsilo=obj.codsilo.ljust(10," ")
         obj.nombre=obj.nombre.ljust(10," ")
         obj.codpro=obj.codpro.ljust(10," ")
         obj.stock=obj.stock.ljust(5," ")
-    elif b==4: #OPERACIONES
+    elif b==4: # OPERACIONES
         obj.patente=obj.patente.ljust(10," ")
         obj.fechacupo=obj.fechacupo.ljust(10," ")
         obj.estado=obj.estado.ljust(1," ")
@@ -406,18 +406,22 @@ def entrega_cupos():
 
 def recepcion():
     op="1"
+    m = 0
+    t = os.path.getsize(afo)
+    if t!=0:
+        alo.seek(0)
+        pickle.load(alo)
+        m=alo.tell()
     while op != "0": 
         ope=Operaciones()
         pat = validar_patente(input("Ingrese patente: "))
         fecha=datetime.datetime.now().strftime("%d-%m-%Y")
-        alo.seek(0)
-        pickle.load(alo)
-        m=alo.tell()
         if busqueda_sec_op(ope,pat,fecha):
             ope.estado="A"
             alo.seek(alo.tell()-m)
-            formatear(ope,4)
-            pickle.dump(ope.estado,alo)
+            pickle.dump(ope,alo)
+            alo.flush()
+            print("Estado actualizado a [Arribado]")
         else:
             print("No flaco no esta")
         op=input("Presione [0] para salir y [1] para continuar:")
@@ -461,14 +465,16 @@ menu()
 
 
 
-def mostrar2(archf,archl):
-    vr=Operaciones()
-    t=os.path.getsize(archf)
-    archl.seek(0)
+def mostrar2(af,al):
+    print(datetime.datetime.now().strftime("%Y"))
+    rego=Operaciones()
+    t=os.path.getsize(af)
+    al.seek(0)
     if t== 0:
         print("No hay nda")
     else:
-        while archl.tell() < t:
-            vr=pickle.load(archl)
-            print(vr.patente,vr.fechacupo,vr.estado)
+        while al.tell() < t:
+            rego=pickle.load(al)
+            print(rego)
+            print(rego.patente,rego.fechacupo,rego.estado)
 mostrar2(afo,alo)

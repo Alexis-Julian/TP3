@@ -3,7 +3,10 @@ import pickle
 import os.path
 import datetime
 from re import A
+from webbrowser import Opera
 clear = lambda x: os.system(x)
+
+#Falta modificacion en administracion
 
 class Operaciones():
     def __init__(self) -> None:
@@ -69,20 +72,26 @@ def validar_longitud(mensaje,hasta):
     return opc
 
 def formatear(obj,b):
-    if b==0:
-        obj.cod=str(obj.cod)
-        obj.cod=obj.cod.ljust(10," ")
+    if b==0: #RUBROS || PRODUCTOS
+        obj.cod=str(obj.cod).ljust(10," ")
         obj.nombre=obj.nombre.ljust(20," ")
-    elif b==1:
-        obj.valmin=str(obj.valmin)
-        obj.valin=obj.valmin.ljust(2," ")
-        obj.valmax=str(obj.valmax)
-        obj.valmax=obj.valmax.ljust(2," ")
-    elif b==3:
+    elif b==1: #RUBROSXPRODUCTO
+        obj.valin=str(obj.valmin).ljust(5," ")
+        obj.valmax=str(obj.valmax).ljust(5," ")
+    elif b==3: #SILOS
         obj.codsilo=obj.codsilo.ljust(10," ")
         obj.nombre=obj.nombre.ljust(10," ")
         obj.codpro=obj.codpro.ljust(10," ")
         obj.stock=obj.stock.ljust(5," ")
+    elif b==4: #OPERACIONES
+        obj.patente=obj.patente.ljust(10," ")
+        obj.fechacupo=obj.fechacupo.ljust(10," ")
+        obj.estado=obj.estado.ljust(1," ")
+        obj.codpro=str(obj.codpro).ljust(10," ")
+        obj.bruto=str(obj.bruto).ljust(10," ")
+        obj.tara=str(obj.tara).ljust(10," ")
+
+
 
 def busqueda_secuencial(al,af,bus,cod):
     encontrado = False
@@ -172,10 +181,11 @@ def baja_producto(af,al,car):
     t=os.path.getsize(af)
     print("Ingrese codigo que desea dar de baja logicamente [0]-Salir")
     codigo=validar_longitud("Codigo: ",10)
-    codigo=int(codigo)
     while codigo != 0 and t != 0:
         idx=busqueda_secuencial(al,af,car,codigo)
         if idx !=-1:
+            al.seek(idx)
+            car=pickle.load(al)
             car.estado="B"
             al.seek(idx)
             pickle.dump(car,al)
@@ -352,7 +362,8 @@ def busqueda_sec_op(rego,pat,fecha):
     alo.seek(0)
     while alo.tell() < t and encontrado==False:
         rego = pickle.load(alo)
-        if rego.patente == pat and rego.fechacupo == fecha:
+        print(rego.patente)
+        if rego.patente.strip() == pat and rego.fechacupo.strip() == fecha:
             encontrado = True
     return encontrado
         
@@ -383,6 +394,7 @@ def entrega_cupos():
             rego.codpro = regpro.cod
             rego.fechacupo = fecha
             rego.estado="P"
+            formatear(rego,4)
             pickle.dump(rego,alo)
             alo.flush()
             print("Cupo entregado con exito. Estado [Pendiente]")
@@ -392,7 +404,25 @@ def entrega_cupos():
             op=input("Presione [0] para salir y [1] para continuar:")
         
 
-
+def recepcion():
+    op="1"
+    while op != "0": 
+        ope=Operaciones()
+        pat = validar_patente(input("Ingrese patente: "))
+        fecha=datetime.datetime.now().strftime("%d-%m-%Y")
+        alo.seek(0)
+        pickle.load(alo)
+        m=alo.tell()
+        if busqueda_sec_op(ope,pat,fecha):
+            ope.estado="A"
+            alo.seek(alo.tell()-m)
+            formatear(ope,4)
+            pickle.dump(ope.estado,alo)
+        else:
+            print("No flaco no esta")
+        op=input("Presione [0] para salir y [1] para continuar:")
+        while op!="0" and op!="1":
+            op=input("Presione [0] para salir y [1] para continuar:")
 
 
 
@@ -408,7 +438,7 @@ def menu():
             case "2":
                 entrega_cupos()
             case "3":
-                print("hola")
+                recepcion()
             case "4":
                 print("hola")
             case "5":
@@ -428,7 +458,11 @@ def menu():
 
 
 menu()
-def mostrar2(vr,archf,archl):
+
+
+
+def mostrar2(archf,archl):
+    vr=Operaciones()
     t=os.path.getsize(archf)
     archl.seek(0)
     if t== 0:
@@ -436,6 +470,5 @@ def mostrar2(vr,archf,archl):
     else:
         while archl.tell() < t:
             vr=pickle.load(archl)
-            print(vr.patente,vr.codpro,vr.fechacupo,vr.estado)
-oper = Operaciones()
-mostrar2(oper,afo,alo)
+            print(vr.patente,vr.fechacupo,vr.estado)
+mostrar2(afo,alo)

@@ -356,16 +356,19 @@ def ingreso_fecha():
     return fecha
 
 
-def busqueda_sec_op(rego,pat,fecha):
+def busqueda_sec_op(rego,pat):
     t = os.path.getsize(afo)
     encontrado = False
     alo.seek(0)
     while alo.tell() < t and encontrado==False:
+        idx = alo.tell()
         rego = pickle.load(alo)
-        print(rego.patente)
-        if rego.patente.strip() == pat and rego.fechacupo.strip() == fecha:
+        if rego.patente.strip() == pat:
             encontrado = True
-    return encontrado
+    if encontrado:
+        return idx
+    else:
+        return -1
         
 def entrega_cupos():
     regpro=Productos()
@@ -376,10 +379,16 @@ def entrega_cupos():
         pat = validar_patente(input("Ingrese patente: "))
         # verificar que la patente no tenga cupos en esa fecha
         fecha = ingreso_fecha()
-        if busqueda_sec_op(rego,pat,fecha) and rego.estado!="":
-            print("Error. Cupo ya otorgado")
-            continuar = False
+        idx = busqueda_sec_op(rego,pat)
+        if  idx !=1 :
+            alo.seek(idx)
+            rego = pickle.load(alo)
+            if rego.fechacupo.strip() == fecha and rego.estado!="":
+                print("Error. Cupo ya otorgado")
+                continuar = False
         if continuar:
+            alo.seek(alo.tell())
+            print(rego.fechacupo)
             idx = busqueda_secuencial(alp,afp,regpro,input("Ingrese el codigo del producto: "))
             if idx == -1:
                 print("Error. El codigo de producto ingresado no existe.")
@@ -411,24 +420,153 @@ def recepcion():
     if t!=0:
         alo.seek(0)
         pickle.load(alo)
-        m=alo.tell()
+        m = alo.tell()
     while op != "0": 
-        ope=Operaciones()
+        rego = Operaciones()
         pat = validar_patente(input("Ingrese patente: "))
-        fecha=datetime.datetime.now().strftime("%d-%m-%Y")
-        if busqueda_sec_op(ope,pat,fecha):
-            ope.estado="A"
-            alo.seek(alo.tell()-m)
-            pickle.dump(ope,alo)
-            alo.flush()
-            print("Estado actualizado a [Arribado]")
+        fecha = datetime.datetime.now().strftime("%d-%m-%Y")
+        idx = busqueda_sec_op(rego,pat)
+        if idx!=-1:
+            alo.seek(idx)
+            rego = pickle.load(alo)
+            if rego.fechacupo.strip()== fecha:
+                rego.estado="A"
+                alo.seek(alo.tell()-m)
+                pickle.dump(rego,alo)
+                alo.flush()
+                print("Estado actualizado a [Arribado]")
+            else:
+                print(rego.fechacupo)
+                print("Error. La fecha del camion no coincide con la fecha del dia")
         else:
-            print("No flaco no esta")
+            print("Error. La patente ingresada no ha sido encontrada")
+
         op=input("Presione [0] para salir y [1] para continuar:")
         while op!="0" and op!="1":
             op=input("Presione [0] para salir y [1] para continuar:")
 
 
+def tamano_un_registro(af,al):
+    t = os.path.getsize(af)
+    if t!=0:
+        al.seek(0)
+        pickle.load(al)
+        tamano_registro = al.tell()
+        al.seek(0)
+        return tamano_registro
+    else:
+        return 0
+
+def ordenamiento_decreciente_rubros():
+    t_t = os.path.getsize(afr)
+    t_u = tamano_un_registro(afr,alr)
+    regr1 = Rubros()
+    regr2 = Rubros()
+    ln = t_t//t_u
+    if(ln > 2):
+        for x in range(ln):
+            alr.seek(0)
+            for y in range(ln-(x+1)):
+                pos1 = y*t_u
+                #print(pos1)
+                #print(t_u)
+                alr.seek(pos1)
+                regr1 = pickle.load(alr)
+                regr2 = pickle.load(alr)
+                alr.seek(pos1)
+                if(regr1.cod<regr2.cod):
+                    pickle.dump(regr2,alr)
+                    alr.flush()
+                    pickle.dump(regr1,alr)
+                    alr.flush()
+                    alr.seek(pos1)
+
+
+
+def busqueda_dico_validacion_rubro_calidad(regr,regrxp,made_in_china):
+    # buscar cod de rubro de regrxp(rubrosxproductos.dat) en rubros.dat
+    print(made_in_china)
+    t = os.path.getsize(afr)
+    encontrado = False
+    tamano_registro = tamano_un_registro(afr,alr)
+    if(tamano_registro!=0):
+        inicio = 0
+        final = (t//tamano_registro)-1
+        while inicio <= final  and encontrado == False:
+            print(inicio,final)
+            medio = (inicio+final)//2
+            print(medio)
+            alr.seek(medio*tamano_registro)
+            regr = pickle.load(alr)
+            print(regr.cod,regrxp.codrubro)
+            if int(regr.cod) == int(regrxp.codrubro):
+                encontrado = True
+                print(regr.cod,regr.nombre)
+                print("Ahora hay que ingresar el valor de la calidad del archivo rxp")
+                valor_calidad = validar_tipo(float,input("Ingrese el valor del control de calidad: "),0,100)
+                if not(valor_calidad<=float(regrxp.valmax) and valor_calidad>=float(regrxp.valmin)):
+                    made_in_china[0] += 1
+            elif(int(regr.cod) < int(regrxp.codrubro)):
+                final = medio-1
+            else:
+                inicio = medio+1
+    return encontrado
+
+
+def busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego):
+    regr = Rubros()
+    t = os.path.getsize(afrxp)
+    alrxp.seek(0)
+    encontrado = False
+    made_in_china = [0]
+    encontrado_dico = False
+    while alrxp.tell()<t:
+        regrxp = pickle.load(alrxp)
+        if (int(regrxp.codpro) == int(rego.codpro)):
+            encontrado_dico = busqueda_dico_validacion_rubro_calidad(regr,regrxp,made_in_china)
+            encontrado = True
+    print(made_in_china)
+    if made_in_china[0] > 1 and encontrado and encontrado_dico:
+        rego.estado = "R"
+        print("El producto no cumple con los estandares de calidad. Estado actualizado a [Rechazado].")
+    elif encontrado and encontrado_dico:
+        rego.estado = "C"
+        print("El producto cumple con los estandares de calidad. Estado actualizado a [Con Calidad]")
+    else:
+        print("Error. El codigo de producto correspondiente a la patente ingresada no existe.")
+    alo.seek(alo.tell()-tam_rego)
+    pickle.dump(rego,alo)
+    alo.flush()
+
+
+def registrar_calidad():
+    rego = Operaciones()
+    regrxp = RubrosxProducto()
+    regr = Rubros()
+    tam_rego = tamano_un_registro(afo,alo)
+    ordenamiento_decreciente_rubros() # ordenamiento del archivo rubros por codigos decreciente
+    conti = "1"
+    while conti != "0":
+        patente = validar_patente(input("Ingrese patente: "))
+        idx = busqueda_sec_op(rego,patente) 
+        if idx != -1:
+            alo.seek(idx)
+            rego = pickle.load(alo)
+            if rego.estado=="A":
+                print("Patente encontrada con exito. El estado [Arribando] es correcto")
+            # rego.codpro buscar en rubroxproducto.dat. Si se encuentra, regr.cod (codigo de rubro)
+            # para buscar en rubros.dat y si esta, buscar el nombre del rubro y mostrarlocon su codigo correspondiente
+            # Ingresar un valor y verificar que ese valor se encuentre entre el maximo y minimo admitido por
+            # el archivo rubroxproductos.dat
+            busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego) # retorna verdadero si encuentra
+        elif rego.estado=="A":
+            print("Error. La patente ingresada no fue encontrada.")  
+        else:
+            print("Error. El estado NO es [Arribando]")
+
+        conti=input("Presione [0] para salir y [1] para continuar:")
+        while conti!="0" and conti!="1":
+            conti=input("Presione [0] para salir y [1] para continuar:")
 
 def menu():
     opc=""
@@ -444,7 +582,7 @@ def menu():
             case "3":
                 recepcion()
             case "4":
-                print("hola")
+                registrar_calidad()
             case "5":
                 print("hola")
             case "6":
@@ -466,7 +604,6 @@ menu()
 
 
 def mostrar2(af,al):
-    print(datetime.datetime.now().strftime("%Y"))
     rego=Operaciones()
     t=os.path.getsize(af)
     al.seek(0)
@@ -478,3 +615,19 @@ def mostrar2(af,al):
             print(rego)
             print(rego.patente,rego.fechacupo,rego.estado)
 mostrar2(afo,alo)
+# modificada funcion busqueda_sec_op(registro,patente) ahora tiene 2 parametros y solamente busca si la patente existe
+# ahora se puede usar tambien en registrar calidad
+# busqueda_sec_op(rego,pat) ahora retorna un indice
+# ordenamiento decreciente por codigo del archivo rubros.dat
+# busqueda dicotomica
+def mostrar3(af,al):
+    regr=Rubros()
+    t=os.path.getsize(af)
+    al.seek(0)
+    if t== 0:
+        print("No hay nda")
+    else:
+        while al.tell() < t:
+            regr=pickle.load(al)
+            print(regr.cod,regr.nombre)
+mostrar3(afr,alr)

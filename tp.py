@@ -339,14 +339,14 @@ def administraciones():
 
 
 def ingreso_fecha():
-    print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo '01-12-05'.")
+    print("La fecha debe escribirse en el formato dia-mes-ano. Ejemplo: '01-12-2020'.")
     ban = True
     while ban:
         try:
             fecha = input("Ingrese fecha en formato DD-MM-AAAA: ")
             datetime.datetime.strptime(fecha, '%d-%m-%Y')
             ban = False
-            print("Fecha Valida")
+            #print("Fecha Valida")
         except ValueError:
             print("Fecha Invalida")
     return fecha
@@ -374,9 +374,18 @@ def entrega_cupos():
         continuar = True
         pat = validar_patente(input("Ingrese patente: "))
         # verificar que la patente no tenga cupos en esa fecha
+        print("Ingrese la fecha del cupo para recepcion.")
         fecha = ingreso_fecha()
+        dia,mes,ano = fecha.split("-")
+        diah,mesh,anoh = datetime.datetime.now().strftime('%d-%m-%Y').split("-")
+        if int(ano)<int(anoh) or (int(ano)==int(anoh) and int(mes)<int(mesh)) or (int(ano)==int(anoh) and int(mes)==int(mesh) and int(dia)<int(diah)):
+            print("Error. La fecha de recepcion no puede ser menor que la fecha actual")
+            continuar = False
+        else:
+            print("Fecha ingresada con exito.")
+
         idx = busqueda_sec_op(rego,pat)
-        if  idx != -1:
+        if  idx != -1 and continuar:
             alo.seek(idx)
             rego = pickle.load(alo)
             if rego.fechacupo.strip() == fecha and rego.estado!="":
@@ -621,7 +630,19 @@ def registrar_tara():
     else:
         print("La patente ingresada no ha sido encontrada")
     clear("pause")   
-            
+
+def reportes():
+    print("REPORTES")
+    print("Cantidad de cupos otorgados: ") # camiones que pasaron satisfactoriamente por entrega de cupos
+    print("Cantidad total de camiones recibidos: ") # camiones que pasaron satisfactoriamente por recepcion
+    print("Cantidad total de camiones por cada producto: ")
+    print("Peso neto total de cada producto: ") # recorrer archivo silos
+    print("Promedio del peso neto total de cada producto: ") # recorrer archivo silos
+    print("Patente del camion de cada producto que menor catidad de dicho producto descargo: ")
+
+
+
+
 def menu():
     opc=""
     while opc != "0":
@@ -644,7 +665,7 @@ def menu():
             case "7":
                 registrar_tara()
             case "8":
-                print("hola")
+                reportes()
             case "9":
                 print("hola")
             case "0":

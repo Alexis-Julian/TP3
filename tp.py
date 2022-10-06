@@ -1,3 +1,4 @@
+from array import array
 import os 
 import pickle
 import os.path
@@ -632,14 +633,74 @@ def registrar_tara():
     clear("pause")   
 
 def reportes():
+    array_reportes=items_reportes()
     print("REPORTES")
     print("Cantidad de cupos otorgados: ") # camiones que pasaron satisfactoriamente por entrega de cupos
     print("Cantidad total de camiones recibidos: ") # camiones que pasaron satisfactoriamente por recepcion
-    print("Cantidad total de camiones por cada producto: ")
+    #-------------
+    print("Cantidad total de camiones por cada producto: ") 
     print("Peso neto total de cada producto: ") # recorrer archivo silos
     print("Promedio del peso neto total de cada producto: ") # recorrer archivo silos
     print("Patente del camion de cada producto que menor catidad de dicho producto descargo: ")
+    
 
+def items_reportes():
+    array_reportes=[]
+    u=tamano_un_registro(afo,alo)
+    to=os.path.getsize(afo)
+    cupos_entregados=to//u
+    array_reportes.append(cupos_entregados)
+    #--------------------------------
+    alo.seek(0)
+    cont=0
+    while alo.tell() < to:
+        rego=pickle.load(alo)
+        if rego.estado.strip()=="P":
+            cont+=1
+    camiones_arribado=cupos_entregados-cont
+    array_reportes.append(camiones_arribado)
+    #-------------------------------
+    product=[]
+    alp.seek(0)
+    tp=os.path.getsize(afp)
+    while alp.tell() < tp:
+        regp=pickle.load(alp)
+        product.append([regp.nombre.strip(),regp.cod.strip(),0,0,1000000,0])
+    alo.seek(0)
+    while alo.tell() < to:
+        rego=pickle.load(alo)
+        boo = False
+        i = 0
+        while  i  <= len(product) and boo == False:
+            if product[i][1] == rego.codpro.strip():
+                  product[i][2] += 1
+                  boo = True
+            else: 
+                i += 1
+            if product[i][4] > int(rego.bruto.strip())-int(rego.tara.strip()):
+                  product[i][4] =  int(rego.bruto.strip())-int(rego.tara.strip())
+                  product[i][5] = rego.patente.strip()
+        if boo == False:
+            print("marolio")
+   
+    #------------------------------------------
+    als.seek(0)
+    ts=os.path.getsize(afs)
+    while als.tell() < ts:
+        regs=pickle.load(als)
+        boo = False
+        i = 0
+        while  i  <= len(product) and boo == False:
+            if product[i][1] == regs.cod.strip():
+                  product[i][3] += int(regs.stock)
+                  boo = True
+            else: 
+                i += 1
+        if boo == False:
+            print("chapita")
+    print(product)
+    print(array_reportes)
+    #----------------------------
 
 
 
@@ -666,6 +727,7 @@ def menu():
                 registrar_tara()
             case "8":
                 reportes()
+                clear("pause")
             case "9":
                 print("hola")
             case "0":

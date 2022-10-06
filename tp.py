@@ -677,9 +677,9 @@ def items_reportes():
                   boo = True
             else: 
                 i += 1
-            if product[i][4] > int(rego.bruto.strip())-int(rego.tara.strip()):
-                  product[i][4] =  int(rego.bruto.strip())-int(rego.tara.strip())
-                  product[i][5] = rego.patente.strip()
+        if product[i][4] > int(rego.bruto.strip())-int(rego.tara.strip()):
+            product[i][4] =  int(rego.bruto.strip())-int(rego.tara.strip())
+            product[i][5] = rego.patente.strip()
         if boo == False:
             print("marolio")
    

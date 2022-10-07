@@ -1,5 +1,4 @@
 from array import array
-from distutils.log import error
 import os 
 import pickle
 import os.path
@@ -61,8 +60,7 @@ def validar_patente(patent):
 def validar_tipo(tipo,opc,desde,hasta):
     try:
         opc=tipo(opc)
-        espacios = " " in opc
-        while not(opc >= desde or opc <= hasta) or espacios or opc =="":
+        while opc < desde or opc > hasta:
             print("Error. El numero ingresado debe estar entre",desde,"y",hasta)
             opc = tipo(input("Intente nuevamente: "))
     except:
@@ -72,14 +70,10 @@ def validar_tipo(tipo,opc,desde,hasta):
     return opc
 
 def validar_longitud(mensaje,hasta):
-    try:
-        opc = input(mensaje)
-        while len(opc) > hasta or opc =="":
-            print("Error. La longitud del codigo debe ser menor a",hasta)
-            opc = input("Intente nuevamente: ")
-    except:
-        print("Error")
-        validar_longitud(mensaje,hasta)
+    opc = input(mensaje)
+    while len(opc) > hasta:
+        print("Error. La longitud del codigo debe ser menor a",hasta)
+        opc = input("Intente nuevamente: ")
     return opc
 
 def formatear(obj,b):
@@ -173,15 +167,12 @@ def alta_producto_rubro(car,nombre,al,af):
     codigo = validar_tipo(int,input("Codigo: "),0,1000)
     while codigo != 0:
         car.cod=codigo 
-        print(nombre)
-        car.nombre=input("Ingrese el nombre: ")
-        espacios = " " in car.nombre
-        while not(len(car.nombre)>=0 and len(car.nombre)<=20) or espacios or car.nombre=="":
-            print("El ",nombre,"debe tener como maximo 20 caracteres. Sin espacios.")
-            print(nombre)
-            car.nombre=input("Ingrese el nombre: ")
-            espacios = " " in car.nombre
-            
+        print("Nombre de",nombre,": ")
+        car.nombre=input("")
+        while len(car.nombre)<0 or len(car.nombre)>20:
+            print("El ",nombre,"debe tener como maximo 20 caracteres")
+            print("Nombre de",nombre,":")
+            car.nombre=input("")
         formatear(car,0)
         pickle.dump(car,al)
         al.flush()
@@ -192,7 +183,6 @@ def alta_producto_rubro(car,nombre,al,af):
     clear("pause")
 
 def baja_producto(af,al,car):
-    clear("cls")
     car=Productos()
     t=os.path.getsize(af)
     print("Ingrese codigo que desea dar de baja logicamente [0]-Salir")
@@ -314,10 +304,10 @@ def submenu_administacion(opc1):
 def altas(opc1):
     if opc1 == "B":
         car=Productos() #Define donde estas yendo######################
-        alta_producto_rubro(car,"Producto",alp,afp)
+        alta_producto_rubro(car,"producto",alp,afp)
     elif opc1== "C":
         rub=Rubros() 
-        alta_producto_rubro(rub,"Rubro",alr,afr)
+        alta_producto_rubro(rub,"rubro",alr,afr)
     elif opc1=="D":
         car=RubrosxProducto() 
         alta_rubroxproducto(afrxp,alrxp,car)
@@ -668,8 +658,8 @@ class Reportes():
         self.nom_prods = []
         self.cod_prods = []
         self.cant_cam_prods = []
-        self.prom_neto_prods = []
         self.neto_tot = []
+        self.neto_men = 0
         self.pat_men = ""
         
 
@@ -700,11 +690,9 @@ def items_reportes():
         regp=pickle.load(alp)
         regrep.nom_prods.append(regp.nombre.strip())
         regrep.cod_prods.append(regp.cod.strip())
-        regrep.cant_cam_prods.append(0)
-        regrep.neto_tot.append(0)
-        regrep.prom_neto_prods.append(0)
+        product.append([0,0,1000000,0])
+        # 2-cant camiones prod 3-neto total  4-neto menor  5-pat menor
     alo.seek(0)
-    busca_menor = True
     while alo.tell() < to: # busqueda secuencial archivo operaciones.dat
         rego=pickle.load(alo)
         encontrado = False
@@ -715,29 +703,32 @@ def items_reportes():
                 encontrado = True
             else: 
                 i += 1
-        if int(rego.neto)!=0 and busca_menor:
-            men = int(rego.neto)
-            busca_menor = False
-        if int(rego.neto)!=0 and busca_menor==False and men>int(rego.neto):
+        #if product[i][4] > int(rego.bruto)-int(rego.tara):
+        if alo.tell()==0:
+            men = rego.neto
+        if rego.neto!=0 and men>rego.neto:
+            regrep.neto_men = men
             regrep.pat_men = rego.patente
 
+        if boo == False:
+            print("marolio")
     #------------------------------------------
     als.seek(0)
     ts=os.path.getsize(afs)
     while als.tell() < ts:
         regs=pickle.load(als)
-        encontrado = False
+        boo = False
         i = 0
-        while  i  <= len(product) and encontrado == False:
-            if regrep.cod_prods[i] == regs.cod.strip():
-                regrep.neto_tot[i] += int(regs.stock)
-                if regrep.cant_cam_prods[i]!=0:
-                    regrep.prom_neto_prods[i] = regrep.neto_tot[i]//regrep.cant_cam_prods[i]
-                    encontrado = True
-            else:
+        while  i  <= len(product) and boo == False:
+            if product[i][1] == regs.cod.strip():
+                  product[i][3] += int(regs.stock)
+                  boo = True
+            else: 
                 i += 1
-
-    print(regrep)
+        if boo == False:
+            print("chapita")
+    print(product)
+    print(array_reportes)
     #----------------------------
     def elreportedel9lareconchadetumadre():
         maysilo = 0
@@ -796,7 +787,7 @@ def menu():
                 print("Has salido")
             case _:
                 pass
-menu()
+#menu()
 
 
 
@@ -812,7 +803,7 @@ def mostrar2(af,al):
             rego=pickle.load(al)
             print(rego.patente,rego.fechacupo,rego.estado)
     
-mostrar2(afo,alo)
+#mostrar2(afo,alo)
 
 def mostrar3(af,al):
     print("RUBROS")
@@ -825,7 +816,7 @@ def mostrar3(af,al):
         while al.tell() < t:
             regr=pickle.load(al)
             print(regr.cod,regr.nombre)
-mostrar3(afr,alr)
+#mostrar3(afr,alr)
 
 def mostrar4(af,al):
     print("SILOS")
@@ -840,4 +831,4 @@ def mostrar4(af,al):
             print(regs.cod,regs.stock,regs.nombre,regs.codsilo)
             
 
-mostrar4(afs,als)
+#mostrar4(afs,als)

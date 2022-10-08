@@ -17,9 +17,6 @@ class Operaciones():
         self.bruto=0
         self.tara=0
         self.neto=0
-    
-
-
 class Productos():
     def __init__(self) -> None:
         self.cod=0
@@ -44,12 +41,12 @@ class Silos():
         self.stock=0
 
 
-
 """ ---------------------------Funcionales---------------------- """
         
 def validar_patente(patent):
     espacios = " " in patent
-    while not(len(patent) >=6 and len(patent) <=7) or espacios:
+    print(patent)
+    while not(len(patent) >=6 and len(patent) <=7) or espacios :
         if(espacios):
             print("Error. La patente no debe contener espacios.")
         if not(len(patent) >=6 and len(patent) <=7):
@@ -60,8 +57,8 @@ def validar_patente(patent):
 
 def validar_tipo(tipo,opc,desde,hasta):
     try:
-        opc=tipo(opc)
         espacios = " " in opc
+        opc=tipo(opc)
         while not(opc >= desde or opc <= hasta) or espacios or opc =="":
             print("Error. El numero ingresado debe estar entre",desde,"y",hasta)
             opc = tipo(input("Intente nuevamente: "))
@@ -81,6 +78,13 @@ def validar_longitud(mensaje,hasta):
         print("Error")
         validar_longitud(mensaje,hasta)
     return opc
+
+def validar_salida():
+        opc=input("Presione [C] para Continuar o [S] para Salir: ").upper()
+        while opc != "S" and opc != "C":
+            opc=input("Error. [C] para Continuar o [S] para Salir: ").upper()
+        return opc
+        
 
 def formatear(obj,b):
     if b==0: # PRODUCTOS || RUBROS
@@ -103,8 +107,6 @@ def formatear(obj,b):
         obj.tara=str(obj.tara).ljust(10," ")
         obj.neto=str(obj.neto).ljust(10," ")
 
-
-
 def busqueda_secuencial(al,af,bus,cod):
     encontrado = False
     al.seek(0)
@@ -116,6 +118,34 @@ def busqueda_secuencial(al,af,bus,cod):
             encontrado = True
     if encontrado:
         return pos
+    else:
+        return -1
+
+def busq_sec_nom_prod_rub(al,af,reg,opc):
+    t=os.path.getsize(af)
+    al.seek(0)
+    encontrado=False
+    while al.tell() < t and encontrado != False :
+        pos=al.tell()
+        reg=pickle.load(al)
+        if reg.nombre.strip()==opc:
+            encontrado=True
+        if encontrado:
+            return pos
+        else:
+            return -1
+
+def busqueda_sec_op(rego,pat):
+    t = os.path.getsize(afo)
+    encontrado = False
+    alo.seek(0)
+    while alo.tell() < t and encontrado==False:
+        idx = alo.tell()
+        rego = pickle.load(alo)
+        if rego.patente.strip() == pat:
+            encontrado = True
+    if encontrado:
+        return idx
     else:
         return -1
 
@@ -194,10 +224,14 @@ def alta_producto_rubro(car,nombre,al,af):
 def baja_producto(af,al,car):
     clear("cls")
     car=Productos()
+    conti = "C"
     t=os.path.getsize(af)
-    print("Ingrese codigo que desea dar de baja logicamente [0]-Salir")
-    codigo=validar_longitud("Codigo: ",10)
-    while codigo != 0 and t != 0:
+    if(t==0):
+        conti="S"
+        print("Error. El archivo productos.dat no posee ningun producto.")
+    while conti !="S":
+        consulta_producto(afp,alp,car,"Producto")
+        codigo = validar_tipo(int,input("Ingrese el Codigo de producto que desea dar de baja: "),0,199)
         idx=busqueda_secuencial(al,af,car,codigo)
         if idx !=-1:
             al.seek(idx)
@@ -207,10 +241,8 @@ def baja_producto(af,al,car):
             pickle.dump(car,al)
             al.flush()
         else:
-            print("El codigo ingresado no existe")
-        print("Ingrese codigo que desea dar de baja logicamente [0]-Salir")
-        codigo=validar_longitud("Codigo: ",10)
-        codigo=int(codigo)
+            print("Error. El codigo ingresado no existe")
+        conti = validar_salida()
         
 
 def consulta_producto(af,al,car,nombre):
@@ -305,7 +337,7 @@ def submenu_administacion(opc1):
             case "C":
                 consultas(opc1)
             case "M":
-                print("Hola")
+                modificacion_productos(opc1)
             case "V":
                 pass 
             case _:
@@ -325,14 +357,6 @@ def altas(opc1):
         sil=Silos()
         alta_silos(afs,als,sil)
 
-
-def consultas(opc1):
-    if opc1 == "B":
-        car=Productos() #Define donde estas yendo######################
-        consulta_producto(afp,alp,car,"Producto")
-    elif opc1 =="C" or opc1 =="D" or opc1 =="E":
-        construccion()
-
 def bajas(opc1):
     if opc1 == "B":
         car=Productos() #Define donde estas yendo######################
@@ -341,6 +365,47 @@ def bajas(opc1):
         construccion()
 
 
+def consultas(opc1):
+    if opc1 == "B":
+        car=Productos() #Define donde estas yendo######################
+        consulta_producto(afp,alp,car,"Producto")
+    elif opc1 =="C" or opc1 =="D" or opc1 =="E":
+        construccion()
+
+def modificacion_productos(opc1):
+    estado = True if opc1 == "B" else construccion()
+    if estado:
+        regp = Productos()
+        conti = "C"
+        t = os.path.getsize(afp)
+        if t == 0:
+            print("Error. El archivo productos.dat no posee ningun producto.")
+            conti = "S"
+        while conti != "S":
+            clear("cls")
+            consulta_producto(afp,alp,regp,"Producto")
+            cambio = True
+            cod = input("Ingrese codigo de producto que desea modificar")
+            idx = busqueda_secuencial(alp,afp,regp,cod)
+            if  idx == -1:
+                print("Error. El codigo de producto ingresado no existe.")
+                cambio = False
+            else:
+                alp.seek(idx)
+                regp = pickle.load(alp)
+                regp.nombre = validar_longitud(input("Ingrese el nuevo nombre de producto."),19)
+
+            if cambio and busq_sec_nom_prod_rub(alp,afp,regp,regp.nombre)==-1:
+                print("Error. El nombre ingresado ya esta en uso.")
+                cambio = False
+            if cambio:
+                alp.seek(idx)
+                pickle.dump(regp,alp)
+                alp.flush()
+
+            conti = validar_salida()
+
+                 
 def administraciones():
     opc=""
     while opc != "V":
@@ -370,25 +435,13 @@ def ingreso_fecha():
     return fecha
 
 
-def busqueda_sec_op(rego,pat):
-    t = os.path.getsize(afo)
-    encontrado = False
-    alo.seek(0)
-    while alo.tell() < t and encontrado==False:
-        idx = alo.tell()
-        rego = pickle.load(alo)
-        if rego.patente.strip() == pat:
-            encontrado = True
-    if encontrado:
-        return idx
-    else:
-        return -1
+
         
 def entrega_cupos():
     regpro=Productos()
     rego=Operaciones()
-    op="1"
-    while op != "0":
+    op="C"
+    while op != "S":
         continuar = True
         pat = validar_patente(input("Ingrese patente: "))
         # verificar que la patente no tenga cupos en esa fecha
@@ -430,20 +483,18 @@ def entrega_cupos():
             alo.flush()
             print("Cupo entregado con exito. Estado [Pendiente]")
 
-        op=input("Presione [0] para salir y [1] para continuar:")
-        while op!="0" and op!="1":
-            op=input("Presione [0] para salir y [1] para continuar:")
+        op = validar_salida()
         
 
 def recepcion():
-    op="1"
     m = 0
     t = os.path.getsize(afo)
     if t!=0:
         alo.seek(0)
         pickle.load(alo)
         m = alo.tell()
-    while op != "0": 
+    op = "C"
+    while op != "S": 
         rego = Operaciones()
         pat = validar_patente(input("Ingrese patente: "))
         fecha = datetime.datetime.now().strftime("%d-%m-%Y")
@@ -463,9 +514,7 @@ def recepcion():
         else:
             print("Error. La patente ingresada no ha sido encontrada")
 
-        op=input("Presione [0] para salir y [1] para continuar:")
-        while op!="0" and op!="1":
-            op=input("Presione [0] para salir y [1] para continuar:")
+        op = validar_salida()
 
 
 def tamano_un_registro(af,al):
@@ -564,11 +613,11 @@ def busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego):
 def registrar_calidad():
     rego = Operaciones()
     regrxp = RubrosxProducto()
-    regr = Rubros()
+    #regr = Rubros()
     tam_rego = tamano_un_registro(afo,alo)
     ordenamiento_decreciente_rubros() # ordenamiento del archivo rubros por codigos decreciente
-    conti = "1"
-    while conti != "0":
+    conti = "C"
+    while conti != "S":
         patente = validar_patente(input("Ingrese patente: "))
         idx = busqueda_sec_op(rego,patente) 
         if idx != -1:
@@ -577,19 +626,14 @@ def registrar_calidad():
             if rego.estado=="A":
                 print("Patente encontrada con exito. El estado [Arribando] es correcto")
                 busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego)
-            # rego.codpro buscar en rubroxproducto.dat. Si se encuentra, regr.cod (codigo de rubro)
-            # para buscar en rubros.dat y si esta, buscar el nombre del rubro y mostrarlocon su codigo correspondiente
-            # Ingresar un valor y verificar que ese valor se encuentre entre el maximo y minimo admitido por
-            # el archivo rubroxproductos.dat
-             # retorna verdadero si encuentra
+            else:
+                print("Error. El estado NO es [Arribando]")
         elif rego.estado=="A":
             print("Error. La patente ingresada no fue encontrada.")  
         else:
             print("Error. El estado NO es [Arribando]")
+        conti = validar_salida()
 
-        conti=input("Presione [0] para salir y [1] para continuar:")
-        while conti!="0" and conti!="1":
-            conti=input("Presione [0] para salir y [1] para continuar:")
 
 def registrar_peso_bruto():
     rego=Operaciones()
@@ -610,7 +654,7 @@ def registrar_peso_bruto():
             print("Error. El estado debe ser [Con Calidad]")
     else:
         print("Error. La patente ingresada no se ha encontrado")
-
+    clear("pause")
 
 def registrar_tara():
     regs=Silos()
@@ -642,24 +686,45 @@ def registrar_tara():
                 print("Estado actualizado a [Finalizado]")    
             else:
                 print("Error. No existe un silo para ese producto. Debe ser dado de alta")
-            als.seek(idx)
-            pickle.load(als)
+            #als.seek(idx)
+            #pickle.load(als)
         else:
             print("Error. El estado debe ser [Bruto]")
     else:
         print("La patente ingresada no ha sido encontrada")
     clear("pause")   
 
+def lista_por_producto(regrep,op):
+    ln = len(regrep.nom_prods)
+    for x in range(ln):
+        print(regrep.nom_prods[x],end=" -- ")
+    print()
+    if op == 1:
+        for x in range(ln):
+            print(regrep.cant_cam_prods[x],end=" --- ")
+        print()
+    elif op == 2:
+        for x in range(ln):
+            print(regrep.neto_tot[x],end=" -- ")
+        print()
+    elif op == 3:
+        for x in range(ln):
+            print(regrep.prom_neto_prods[x],end=" -- ")
+        print()
+
+
 def reportes():
-    array_reportes=items_reportes()
+    registro_reportes = items_reportes()
     print("REPORTES")
-    print("Cantidad de cupos otorgados: ") # camiones que pasaron satisfactoriamente por entrega de cupos
-    print("Cantidad total de camiones recibidos: ") # camiones que pasaron satisfactoriamente por recepcion
-    #-------------
-    print("Cantidad total de camiones por cada producto: ") 
+    print("Cantidad de cupos otorgados:",registro_reportes.cupos_entregados) # camiones que pasaron satisfactoriamente por entrega de cupos
+    print("Cantidad total de camiones recibidos:",registro_reportes.camiones_arribados) # camiones que pasaron satisfactoriamente por recepcion
+    print("Cantidad total de camiones por cada producto: ")
+    lista_por_producto(registro_reportes,1)
     print("Peso neto total de cada producto: ") # recorrer archivo silos
+    lista_por_producto(registro_reportes,2)
     print("Promedio del peso neto total de cada producto: ") # recorrer archivo silos
-    print("Patente del camion de cada producto que menor catidad de dicho producto descargo: ")
+    lista_por_producto(registro_reportes,3)
+    print("Patente del camion de cada producto que menor catidad de dicho producto descargo:",registro_reportes.pat_men)
     
 class Reportes():
     def __init__(self):
@@ -668,8 +733,8 @@ class Reportes():
         self.nom_prods = []
         self.cod_prods = []
         self.cant_cam_prods = []
-        self.prom_neto_prods = []
         self.neto_tot = []
+        self.prom_neto_prods = []
         self.pat_men = ""
         
 
@@ -677,18 +742,21 @@ class Reportes():
 def items_reportes():
     regrep = Reportes()
     array_reportes=[]
-    u=tamano_un_registro(afo,alo)
     to=os.path.getsize(afo)
-    cupos_entregados=to//u
+    if to != 0:
+        u=tamano_un_registro(afo,alo)
+        cupos_entregados=to//u
+    else:
+        cupos_entregados=0
     array_reportes.append(cupos_entregados)
     #--------------------------------
     alo.seek(0)
     cont=0
     while alo.tell() < to:
         rego=pickle.load(alo)
-        cont+1 if rego.estado.strip()=="P" else None
-        #if rego.estado.strip()=="P":
-        #    cont+=1
+        #cont=1 if rego.estado.strip()=="P" else None
+        if rego.estado.strip()=="P":
+            cont+=1
     camiones_arribado=cupos_entregados-cont
     array_reportes.append(camiones_arribado)
     #-------------------------------
@@ -736,36 +804,40 @@ def items_reportes():
                     encontrado = True
             else:
                 i += 1
-
     print(regrep)
+    return regrep
     #----------------------------
-    def elreportedel9lareconchadetumadre():
-        maysilo = 0
-        maystock = " "
-        t = os.path.getsize(afs)
-        als.seek(0)
-        while als.tell() < t:
-            regs = pickle.load(als)
-            if regs.stock > maystock:
-                maystock = regs.stock
-                maysilo = regs.nombre
-        print("Ingrese fecha para visualizar camiones rechazado.")
-        fecha = ingreso_fecha()
-        t = os.path.getsize(afo)
-        alo.seek(0)
-        print(fecha)
-        while t > alo.tell():
-            rego = pickle.load(alo)
-            estado= (rego.fechacupo == fecha and rego.estado=="R")
-            if estado:
-                print(rego.patente,end="-")
-                
-                
-
-    
-
-
-
+def listado_silos_rechazos():
+    maysilo = 0
+    maystock = 0
+    maycods = 0
+    t = os.path.getsize(afs)
+    als.seek(0)
+    while als.tell() < t:
+        regs = pickle.load(als)
+        if int(regs.stock) > maystock:
+            maystock = int(regs.stock)
+            maysilo = regs.nombre
+            maycods = regs.codsilo
+    print("Silo con mayor stock:",maysilo)
+    print("Codigo:",maycods)
+    print("Stock:",maystock)
+    print("Ingrese fecha para visualizar camiones rechazado.")
+    fecha = ingreso_fecha()
+    t = os.path.getsize(afo)
+    alo.seek(0)
+    print(fecha)
+    cont = 0
+    while t > alo.tell():
+        rego = pickle.load(alo)
+        estado= (rego.fechacupo == fecha and rego.estado=="R")
+        if estado:
+            cont += 1
+            print(rego.patente,end="-")
+    if cont == 0:
+        print("Ningun camion ha sido rechazado el dia de la fecha.")
+    clear("pause")
+                         
 def menu():
     opc=""
     while opc != "0":
@@ -791,7 +863,7 @@ def menu():
                 reportes()
                 clear("pause")
             case "9":
-                print("hola")
+                listado_silos_rechazos()
             case "0":
                 print("Has salido")
             case _:

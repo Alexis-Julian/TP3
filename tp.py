@@ -59,7 +59,7 @@ def validar_tipo(tipo,opc,desde,hasta):
     try:
         espacios = " " in opc
         opc=tipo(opc)
-        while not(opc >= desde or opc <= hasta) or espacios or opc =="":
+        while not(opc >= desde and opc <= hasta) or espacios or opc =="":
             print("Error. El numero ingresado debe estar entre",desde,"y",hasta)
             opc = tipo(input("Intente nuevamente: "))
     except:
@@ -71,9 +71,11 @@ def validar_tipo(tipo,opc,desde,hasta):
 def validar_longitud(mensaje,hasta):
     try:
         opc = input(mensaje)
-        while len(opc) > hasta or opc =="":
-            print("Error. La longitud del codigo debe ser menor a",hasta)
+        espacios = " " in opc
+        while len(opc) > hasta or espacios or opc =="":
+            print("Error. La longitud del codigo/nombre debe ser menor a",hasta,"caracteres. Sin espacios.")
             opc = input("Intente nuevamente: ")
+            espacios = " " in opc
     except:
         print("Error")
         validar_longitud(mensaje,hasta)
@@ -91,6 +93,8 @@ def formatear(obj,b):
         obj.cod=str(obj.cod).ljust(10," ")
         obj.nombre=obj.nombre.ljust(20," ")
     elif b==1: # RUBROSXPRODUCTO
+        obj.codpro=str(obj.codpro).ljust(10," ")
+        obj.codrubro=str(obj.codrubro).ljust(10," ")
         obj.valin=str(obj.valmin).ljust(5," ")
         obj.valmax=str(obj.valmax).ljust(5," ")
     elif b==3: # SILOS
@@ -114,7 +118,7 @@ def busqueda_secuencial(al,af,bus,cod):
     while al.tell() <t and encontrado == False:
         pos = al.tell()
         bus = pickle.load(al)
-        if bus.cod.strip() == cod:
+        if bus.cod.strip() == str(cod):
             encontrado = True
     if encontrado:
         return pos
@@ -153,7 +157,7 @@ def mostrar(vr,archf,archl):
     t=os.path.getsize(archf)
     archl.seek(0)
     if t== 0:
-        print("No hay nda")
+        print("Archivo Vacio")
     else:
         while archl.tell() < t:
             vr=pickle.load(archl)
@@ -199,24 +203,20 @@ def alta_producto_rubro(car,nombre,al,af):
     print("---------Alta---------")
     t=os.path.getsize(af)
     al.seek(t)
-    print("Seleccione codigo de",nombre,". Presione 0 para salir")
-    codigo = validar_tipo(int,input("Codigo: "),0,1000)
-    while codigo != 0:
-        car.cod=codigo 
-        print(nombre)
-        car.nombre=input("Ingrese el nombre: ")
-        espacios = " " in car.nombre
-        while not(len(car.nombre)>=0 and len(car.nombre)<=20) or espacios or car.nombre=="":
-            print("El ",nombre,"debe tener como maximo 20 caracteres. Sin espacios.")
-            print(nombre)
-            car.nombre=input("Ingrese el nombre: ")
-            espacios = " " in car.nombre
-            
-        formatear(car,0)
-        pickle.dump(car,al)
-        al.flush()
-        print("Seleccione codigo de",nombre,". Presione 0 para salir")
+    continuar = "C"
+    while continuar != "S":
+        print("Seleccione codigo de "+nombre+".")
         codigo = validar_tipo(int,input("Codigo: "),0,1000)
+        if busqueda_secuencial(al,af,car,codigo) != -1:
+            print("Error. El codigo de",nombre,"ingresado ya se encuentra en uso.")
+        else:
+            mensaje = "Ingrese el nombre del "+ nombre +": "
+            car.nombre = validar_longitud(mensaje,20)   
+            car.cod = codigo
+            formatear(car,0)
+            pickle.dump(car,al)
+            al.flush()
+        continuar = validar_salida()
         
     mostrar(car,af,al)
     clear("pause")
@@ -229,9 +229,10 @@ def baja_producto(af,al,car):
     if(t==0):
         conti="S"
         print("Error. El archivo productos.dat no posee ningun producto.")
+        clear("pause")
     while conti !="S":
         consulta_producto(afp,alp,car,"Producto")
-        codigo = validar_tipo(int,input("Ingrese el Codigo de producto que desea dar de baja: "),0,199)
+        codigo = validar_tipo(int,input("Ingrese el Codigo de producto que desea dar de baja: "),0,1000)
         idx=busqueda_secuencial(al,af,car,codigo)
         if idx !=-1:
             al.seek(idx)
@@ -251,53 +252,50 @@ def consulta_producto(af,al,car,nombre):
     al.seek(0)
     salida=""
     salida+="{:<24}".format(nombre)
-    salida+="{:<40}".format("Codigo")
-    salida+="{:<40}".format("Estado")
+    salida+="{:<30}".format("Codigo")
+    salida+="{:<25}".format("Estado")
     print(salida)
     print("---------------------------------------------------------------")
     while al.tell() < t:
         car=pickle.load(al)
         salida=" "
         salida+="{:<25}".format(car.nombre)
-        salida+="{:<40}".format(car.cod)
+        salida+="{:<30}".format(car.cod)
         salida+="{:<25}".format(car.estado)
         print(salida)
     clear("pause")
     
 """ ----------------------RubroXProducto--------------------------- """
 def alta_rubroxproducto(af,al,car):
-    t = os.path.getsize(af)
-    # ____________________________ ESTO HAY QUE HACERLO FUNCION___ LA BUSQUEDA DE CODIGOS YA SEA
-    # DE RUBBROS O PRODUCTOS SE HACE EN RUBROXPRODUCTO, SILOS (Y CAPAPZ OPERACIONES)
-    idx1=idx2=-1
     rub=Rubros()
     pro=Productos()
-    while idx1 == -1:
-        codrubro = input("Ingrese codigo de rubro: ")
-        idx1 = busqueda_secuencial(alr,afr,rub,codrubro)
-        if  idx1 == -1:
-            print("Error. El codigo de rubro ingresado no existe.")
-    while idx2==-1:
+    continuar = "C"
+    while continuar != "S":
+        t = os.path.getsize(af)
+        conti = True
         codproducto = input("Ingrese codigo de producto: ")
-        idx2 = busqueda_secuencial(alp,afp,pro,codproducto)
-        if idx2== -1:
+        if busqueda_secuencial(alp,afp,pro,codproducto) == -1:
             print("Error. El codigo de producto ingresado no existe.")
+            conti = False
+        else:
+            codrubro = input("Ingrese codigo de rubro: ")
+        if conti and busqueda_secuencial(alr,afr,rub,codrubro) == -1:
+            print("Error. El codigo de rubro ingresado no existe.")
+            conti = False
+        if conti:
+            valmin = validar_tipo(int,input("Ingrese el valor minimo: "),0,100)
+            valmax = validar_tipo(int,input("Ingrese el valor maximo: "),valmin,100)
+            al.seek(t)
+            car.codrubro = codrubro
+            car.codpro = codproducto
+            car.valmin = valmin
+            car.valmax = valmax
+            formatear(car,1)
+            pickle.dump(car,al)
+            al.flush()
+            print("RubrosxProductos dado de alta con exito.")
+        continuar = validar_salida()
 
-    valmin,valmax=rubroxproducto_valminmax()
-    al.seek(t)
-    car.codrubro=codrubro
-    car.codpro=codproducto
-    car.valmin=valmin
-    car.valmax=valmax
-    formatear(car,1)
-    pickle.dump(car,al)
-    al.flush()
-
-
-def rubroxproducto_valminmax():
-    valmin = validar_tipo(int,input("Ingrese el valor minimo: "),0,100)
-    valmax = validar_tipo(int,input("Ingrese el valor maximo: "),valmin,100)
-    return valmin,valmax
     
 """ --------------------------Silos--------------------------- """
 def alta_silos(af,al,car):
@@ -345,7 +343,7 @@ def submenu_administacion(opc1):
                                 
 def altas(opc1):
     if opc1 == "B":
-        car=Productos() #Define donde estas yendo######################
+        car=Productos()
         alta_producto_rubro(car,"Producto",alp,afp)
     elif opc1== "C":
         rub=Rubros() 
@@ -359,7 +357,7 @@ def altas(opc1):
 
 def bajas(opc1):
     if opc1 == "B":
-        car=Productos() #Define donde estas yendo######################
+        car=Productos()
         baja_producto(afp,alp,car)
     elif opc1 =="C" or opc1 =="D" or opc1 =="E":
         construccion()
@@ -367,7 +365,7 @@ def bajas(opc1):
 
 def consultas(opc1):
     if opc1 == "B":
-        car=Productos() #Define donde estas yendo######################
+        car=Productos()
         consulta_producto(afp,alp,car,"Producto")
     elif opc1 =="C" or opc1 =="D" or opc1 =="E":
         construccion()
@@ -380,12 +378,13 @@ def modificacion_productos(opc1):
         t = os.path.getsize(afp)
         if t == 0:
             print("Error. El archivo productos.dat no posee ningun producto.")
+            clear("pause")
             conti = "S"
         while conti != "S":
             clear("cls")
             consulta_producto(afp,alp,regp,"Producto")
             cambio = True
-            cod = input("Ingrese codigo de producto que desea modificar")
+            cod = input("Ingrese codigo de producto que desea modificar: ")
             idx = busqueda_secuencial(alp,afp,regp,cod)
             if  idx == -1:
                 print("Error. El codigo de producto ingresado no existe.")
@@ -393,12 +392,13 @@ def modificacion_productos(opc1):
             else:
                 alp.seek(idx)
                 regp = pickle.load(alp)
-                regp.nombre = validar_longitud(input("Ingrese el nuevo nombre de producto."),19)
+                regp.nombre = validar_longitud("Ingrese el nuevo nombre de producto: ",20)
 
             if cambio and busq_sec_nom_prod_rub(alp,afp,regp,regp.nombre)==-1:
                 print("Error. El nombre ingresado ya esta en uso.")
                 cambio = False
             if cambio:
+                formatear(regp,0)
                 alp.seek(idx)
                 pickle.dump(regp,alp)
                 alp.flush()
@@ -429,7 +429,6 @@ def ingreso_fecha():
             fecha = input("Ingrese fecha en formato DD-MM-AAAA: ")
             datetime.datetime.strptime(fecha, '%d-%m-%Y')
             ban = False
-            #print("Fecha Valida")
         except ValueError:
             print("Fecha Invalida")
     return fecha
@@ -463,7 +462,6 @@ def entrega_cupos():
                 print("Error. Cupo ya otorgado")
                 continuar = False
         if continuar and idx == -1:
-            #alo.seek(os.path.getsize(afo))
             idxp = busqueda_secuencial(alp,afp,regpro,input("Ingrese el codigo del producto: "))
             if idxp == -1:
                 print("Error. El codigo de producto ingresado no existe.")
@@ -539,8 +537,6 @@ def ordenamiento_decreciente_rubros():
             alr.seek(0)
             for y in range(ln-(x+1)):
                 pos1 = y*t_u
-                #print(pos1)
-                #print(t_u)
                 alr.seek(pos1)
                 regr1 = pickle.load(alr)
                 regr2 = pickle.load(alr)
@@ -584,19 +580,19 @@ def busqueda_dico_validacion_rubro_calidad(regr,regrxp,made_in_china):
     return encontrado
 
 
-def busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego):
+def busqueda_validacion_rubros_en_rxp(rego,tam_rego):
     regr = Rubros()
+    regrxp = RubrosxProducto()
     t = os.path.getsize(afrxp)
     alrxp.seek(0)
     encontrado = False
     made_in_china = [0]
     encontrado_dico = False
-    while alrxp.tell()<t:
+    while alrxp.tell()<t: # recorrido secuencial de rxp
         regrxp = pickle.load(alrxp)
         if (int(regrxp.codpro) == int(rego.codpro)):
             encontrado_dico = busqueda_dico_validacion_rubro_calidad(regr,regrxp,made_in_china)
             encontrado = True
-    print(made_in_china)
     if made_in_china[0] > 1 and encontrado and encontrado_dico:
         rego.estado = "R"
         print("El producto no cumple con los estandares de calidad. Estado actualizado a [Rechazado].")
@@ -612,8 +608,6 @@ def busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego):
 
 def registrar_calidad():
     rego = Operaciones()
-    regrxp = RubrosxProducto()
-    #regr = Rubros()
     tam_rego = tamano_un_registro(afo,alo)
     ordenamiento_decreciente_rubros() # ordenamiento del archivo rubros por codigos decreciente
     conti = "C"
@@ -625,7 +619,7 @@ def registrar_calidad():
             rego = pickle.load(alo)
             if rego.estado=="A":
                 print("Patente encontrada con exito. El estado [Arribando] es correcto")
-                busqueda_validacion_rubros_en_rxp(regrxp,rego,tam_rego)
+                busqueda_validacion_rubros_en_rxp(rego,tam_rego)
             else:
                 print("Error. El estado NO es [Arribando]")
         elif rego.estado=="A":
@@ -636,7 +630,7 @@ def registrar_calidad():
 
 
 def registrar_peso_bruto():
-    rego=Operaciones()
+    rego = Operaciones()
     pat = validar_patente(input("Ingrese patente: "))
     idx = busqueda_sec_op(rego,pat)
     if idx !=-1:
@@ -686,31 +680,25 @@ def registrar_tara():
                 print("Estado actualizado a [Finalizado]")    
             else:
                 print("Error. No existe un silo para ese producto. Debe ser dado de alta")
-            #als.seek(idx)
-            #pickle.load(als)
         else:
             print("Error. El estado debe ser [Bruto]")
     else:
         print("La patente ingresada no ha sido encontrada")
     clear("pause")   
 
-def lista_por_producto(regrep,op):
+def lista_por_producto(regrep,array):
     ln = len(regrep.nom_prods)
+    print(ln*"---------------")
+    salida=""
     for x in range(ln):
-        print(regrep.nom_prods[x],end=" -- ")
+        salida+="{:<15}".format(regrep.nom_prods[x])
+    print(salida)
     print()
-    if op == 1:
-        for x in range(ln):
-            print(regrep.cant_cam_prods[x],end=" --- ")
-        print()
-    elif op == 2:
-        for x in range(ln):
-            print(regrep.neto_tot[x],end=" -- ")
-        print()
-    elif op == 3:
-        for x in range(ln):
-            print(regrep.prom_neto_prods[x],end=" -- ")
-        print()
+    salida="  "
+    for x in range(ln):
+        salida+="{:<15}".format(array[x])
+    print(salida)
+    print(ln*"---------------")
 
 
 def reportes():
@@ -719,11 +707,11 @@ def reportes():
     print("Cantidad de cupos otorgados:",registro_reportes.cupos_entregados) # camiones que pasaron satisfactoriamente por entrega de cupos
     print("Cantidad total de camiones recibidos:",registro_reportes.camiones_arribados) # camiones que pasaron satisfactoriamente por recepcion
     print("Cantidad total de camiones por cada producto: ")
-    lista_por_producto(registro_reportes,1)
+    lista_por_producto(registro_reportes,registro_reportes.cant_cam_prods)
     print("Peso neto total de cada producto: ") # recorrer archivo silos
-    lista_por_producto(registro_reportes,2)
+    lista_por_producto(registro_reportes,registro_reportes.neto_tot)
     print("Promedio del peso neto total de cada producto: ") # recorrer archivo silos
-    lista_por_producto(registro_reportes,3)
+    lista_por_producto(registro_reportes,registro_reportes.prom_neto_prods)
     print("Patente del camion de cada producto que menor catidad de dicho producto descargo:",registro_reportes.pat_men)
     
 class Reportes():
@@ -741,30 +729,22 @@ class Reportes():
 
 def items_reportes():
     regrep = Reportes()
-    array_reportes=[]
     to=os.path.getsize(afo)
     if to != 0:
         u=tamano_un_registro(afo,alo)
-        cupos_entregados=to//u
-    else:
-        cupos_entregados=0
-    array_reportes.append(cupos_entregados)
+        regrep.cupos_entregados=to//u
     #--------------------------------
     alo.seek(0)
     cont=0
-    while alo.tell() < to:
+    while alo.tell() < to:  # recorrido secuencial archivo operaciones.dat
         rego=pickle.load(alo)
-        #cont=1 if rego.estado.strip()=="P" else None
         if rego.estado.strip()=="P":
             cont+=1
-    camiones_arribado=cupos_entregados-cont
-    array_reportes.append(camiones_arribado)
+    regrep.camiones_arribados = regrep.cupos_entregados-cont
     #-------------------------------
-
-    product=[]
     alp.seek(0)
     tp=os.path.getsize(afp)
-    while alp.tell() < tp:
+    while alp.tell() < tp: # recorrido secuencial archivo productos.dat
         regp=pickle.load(alp)
         regrep.nom_prods.append(regp.nombre.strip())
         regrep.cod_prods.append(regp.cod.strip())
@@ -773,7 +753,7 @@ def items_reportes():
         regrep.prom_neto_prods.append(0)
     alo.seek(0)
     busca_menor = True
-    while alo.tell() < to: # busqueda secuencial archivo operaciones.dat
+    while alo.tell() < to: # recorrido secuencial archivo operaciones.dat
         rego=pickle.load(alo)
         encontrado = False
         i = 0
@@ -792,11 +772,11 @@ def items_reportes():
     #------------------------------------------
     als.seek(0)
     ts=os.path.getsize(afs)
-    while als.tell() < ts:
+    while als.tell() < ts:  # recorrido secuencial del archivo silos.dat
         regs=pickle.load(als)
         encontrado = False
         i = 0
-        while  i  <= len(product) and encontrado == False:
+        while  i  <= len(regrep.cod_prods) and encontrado == False:
             if regrep.cod_prods[i] == regs.cod.strip():
                 regrep.neto_tot[i] += int(regs.stock)
                 if regrep.cant_cam_prods[i]!=0:
@@ -804,7 +784,6 @@ def items_reportes():
                     encontrado = True
             else:
                 i += 1
-    print(regrep)
     return regrep
     #----------------------------
 def listado_silos_rechazos():
@@ -878,7 +857,7 @@ def mostrar2(af,al):
     t=os.path.getsize(af)
     al.seek(0)
     if t== 0:
-        print("No hay nda")
+        print("Vacio")
     else:
         while al.tell() < t:
             rego=pickle.load(al)
@@ -892,7 +871,7 @@ def mostrar3(af,al):
     t=os.path.getsize(af)
     al.seek(0)
     if t== 0:
-        print("No hay nda")
+        print("Vacio")
     else:
         while al.tell() < t:
             regr=pickle.load(al)
@@ -905,11 +884,9 @@ def mostrar4(af,al):
     t=os.path.getsize(af)
     al.seek(0)
     if t== 0:
-        print("No hay nda")
+        print("Vacio")
     else:
         while al.tell() < t:
             regs=pickle.load(al)
             print(regs.cod,regs.stock,regs.nombre,regs.codsilo)
-            
-
 mostrar4(afs,als)

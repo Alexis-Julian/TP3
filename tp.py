@@ -56,7 +56,6 @@ class Reportes():
 #-------------------------------Funcionales---------------------#          
 def validar_patente(patent):
     espacios = " " in patent
-    print(patent)
     while not(len(patent) >=6 and len(patent) <=7) or espacios :
         if(espacios):
             print("Error. La patente no debe contener espacios.")
@@ -64,15 +63,18 @@ def validar_patente(patent):
             print("Error. La patente debe tener entre 6 y 7 caracteres de longitud.")
         print("Intente nuevamente...")
         patent = input("Ingrese patente: ")
+        espacios = " " in patent
     return patent.upper()
 
 def validar_tipo(tipo,opc,desde,hasta):
     try:
         espacios = " " in opc
-        opc=tipo(opc)
+        opc = tipo(opc)
         while not(opc >= desde and opc <= hasta) or espacios or opc =="":
             print("Error. El numero ingresado debe estar entre",desde,"y",hasta)
-            opc = tipo(input("Intente nuevamente: "))
+            opc = input("Intente nuevamente: ")
+            epsacios = " " in opc
+            opc = tipo(opc)
     except:
         print("Error. Debe ingresar un numero.")
         opc = input("Intente nuevamente: ")
@@ -232,8 +234,6 @@ def construccion():
 def alta_producto_rubro(car,nombre,al,af):
     clear("cls")
     print("---------Alta---------")
-    t=os.path.getsize(af)
-    al.seek(t)
     continuar = "C"
     while continuar != "S":
         print("Seleccione codigo de "+nombre+".")
@@ -251,6 +251,8 @@ def alta_producto_rubro(car,nombre,al,af):
             else:
                 print("Error. El codigo de",nombre,"ingresado ya se encuentra en uso.")
         else:
+            t=os.path.getsize(af)
+            al.seek(t)            
             mensaje = "Ingrese el nombre del "+ nombre +": "
             car.nombre = validar_longitud(mensaje,20)   
             car.cod = codigo
@@ -379,23 +381,27 @@ def alta_rubroxproducto(af,al,car):
 def alta_silos(af,al,car):
     global alp,afp
     t = os.path.getsize(af)
-    codigo = validar_longitud("Ingrese el codigo de silo: ",10)
-    nombre = validar_longitud("Ingrese un nombre: ",10)
-    regp = Productos()
-    idx=-1
-    while idx ==-1:
+    continuar="C"
+    while continuar != "S":
+        codigo = validar_longitud("Ingrese el codigo de silo: ",10)
+        nombre = validar_longitud("Ingrese un nombre: ",10)
+        regp = Productos()
         codpro = validar_longitud("Ingrese un codigo de producto: ",10)
-        idx = busqueda_secuencial(alp,afp,regp,codpro)
-    alp.seek(idx)
-    regp = pickle.load(alp)   
-    al.seek(t)
-    car.codsilo=codigo
-    car.nombre=nombre
-    car.cod=regp.cod
-    print(car.cod)
-    formatear(car,3)
-    pickle.dump(car,al)
-    al.flush()
+        idx=busqueda_secuencial(alp,afp,regp,codpro)
+        if idx  == -1:
+            print("Error. El codigo de producto ingresado no se encuentra en el archivo productos.dat")
+        else:
+            alp.seek(idx)
+            regp = pickle.load(alp)   
+            al.seek(t)
+            car.codsilo=codigo
+            car.nombre=nombre
+            car.cod=regp.cod
+            print(car.cod)
+            formatear(car,3)
+            pickle.dump(car,al)
+            al.flush()
+            continuar=validar_salida()
 
 #-------------------------------Menus---------------------#       
 def administraciones():
@@ -578,7 +584,7 @@ def busqueda_dico_validacion_rubro_calidad(regr,regrxp,made_in_china):
             regr = pickle.load(alr)
             if int(regr.cod) == int(regrxp.codrubro):
                 encontrado = True
-                print("Ahora hay que ingresar el valor de la calidad del archivo rxp")
+                print("Ahora hay que ingresar el valor de la calidad del Rubro:",alr.nombre.strip())
                 valor_calidad = validar_tipo(float,input("Ingrese el valor del control de calidad: "),0,100)
                 if not(valor_calidad<=float(regrxp.valmax) and valor_calidad>=float(regrxp.valmin)):
                     made_in_china[0] += 1

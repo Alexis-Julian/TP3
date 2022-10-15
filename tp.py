@@ -177,16 +177,6 @@ def ingreso_fecha():
             print("Fecha Invalida")
     return fecha
 
-def mostrar(vr,archf,archl):
-    t=os.path.getsize(archf)
-    archl.seek(0)
-    if t== 0:
-        print("Archivo Vacio")
-    else:
-        while archl.tell() < t:
-            vr=pickle.load(archl)
-            print(vr.cod,vr.nombre)
-
 def tamano_un_registro(af,al):
     t = os.path.getsize(af)
     if t!=0:
@@ -260,9 +250,6 @@ def alta_producto_rubro(car,nombre,al,af):
             pickle.dump(car,al)
             al.flush()
         continuar = validar_salida()
-        
-    mostrar(car,af,al)
-    clear("pause")
 
 def baja_producto(af,al,car):
     clear("cls")
@@ -783,7 +770,6 @@ def items_reportes():
             rego = pickle.load(alo)
             print(alo.tell())
             if regrep.cod_prods[x] == rego.codpro.strip():
-                print("te encontre")
                 if int(rego.neto)!=0 and busca_menor:
                     men = int(rego.neto)
                     regrep.pat_men[x] = rego.patente.strip()
